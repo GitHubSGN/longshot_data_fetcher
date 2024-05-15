@@ -7,3 +7,6 @@ tokens_list = ["ZRX","ZK","ZIL","ZETA","YFI","XTZ","XRP","XLM","XAI","W","WOO","
                "EOS","ENS","ENA","EGLD","DYM","DYDX","DOT","DOGE","CYBER","CRV","CORE","COMP","CHZ","CELO","CAKE",
                "BTC","BOME","BNB","BLUR","BCH","BAT","AXS","AXL","AVAX","ATOM","AR","ARKM","ARB","APE","ANKR","ALT",
                "ALGO","AGLD","AGIX","AEVO","ADA","ACH","AAVE","PEPE","FLOKI","BONK","SATS"]
+
+# perps 1000 in Bybit &. Binance, not in OKX
+tokens_1000_list = ["PEPE", "FLOKI", "BONK", "SHIB"]
