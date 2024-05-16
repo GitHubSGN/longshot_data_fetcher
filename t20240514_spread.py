@@ -1,12 +1,16 @@
+import re
+
 import pandas as pd
 from datetime import datetime, timedelta
 
 from crawl_common import get_ohlcv_df
-from param import tokens_list, tokens_1000_list
+from param import tokens_list, tokens_multiplier_dict
 
 
 '''exp setting'''
 # tokens = ["TAO", "1000PEPE", "ARB", "WIF", "LDO", "GALA", "OP", "LINK", "AVAX", "NEAR", "SOL", "FIL", "ORDI", "TON"]
+# tokens = ["MASK","MANA","FTM","BCH","SATS"]
+# tokens = ["SATS"]
 tokens = tokens_list        # tokens_1000_list
 end_time_str = '2024-05-14'
 time_winodw = 14
@@ -27,6 +31,9 @@ def get_mean_spread(token: str):
         try:
             df_spot = get_ohlcv_df(symbol, start_time_str, end_time_str, exchange, timeframe, limit)
             exchange_spot = exchange
+            if len(df_spot)==0:
+                df_spot = None
+                continue
             break
         except:
             print(f"No {symbol} in {exchange}...")
@@ -35,13 +42,20 @@ def get_mean_spread(token: str):
     '''perps price history'''
     df_perp = None
     exchange_perp, symbol_perp = None, None
-    symbol_proposal = [f"1000{token}", f"{token}1000", token] if token in tokens_1000_list else [token]
+    symbol_proposal = [token]
+    for multiplier, tokens_multiplier_list in tokens_multiplier_dict.items():
+        if token in tokens_multiplier_list:
+            symbol_proposal = [f"{multiplier}{token}", f"{token}{multiplier}", token] if token in tokens_multiplier_list else [token]
+            break
     symbol_proposal = [f'{token}/USDT:USDT' for token in symbol_proposal]
     for (exchange, symbol) in [(exchange, symbol) for exchange in exchanges for symbol in symbol_proposal]:
         try:
             df_perp = get_ohlcv_df(symbol, start_time_str, end_time_str, exchange, timeframe, limit)
             exchange_perp = exchange
             symbol_perp = symbol
+            if len(df_perp)==0:
+                df_perp = None
+                continue
             break
         except:
             print(f"No {symbol} in {exchange}...")
@@ -49,11 +63,13 @@ def get_mean_spread(token: str):
 
     '''average spread &. last spread'''
     if df_spot is None or df_perp is None:
-        return None, None
+        return None, None, None, None
     else:
-        if symbol_perp.startswith("1000") or symbol_perp.split(f"/")[0].endswith("1000"):
-            df_spot[['open', 'high', 'low', 'close']] = df_spot[['open', 'high', 'low', 'close']] * 1000
-            df_spot["volume"] = df_spot["volume"] / 1000
+        matches = re.findall(r"100*", symbol_perp.split(f"/")[0])
+        if len(matches)>0:
+            multiplier = int(matches[0])
+            df_spot[['open', 'high', 'low', 'close']] = df_spot[['open', 'high', 'low', 'close']] * multiplier
+            df_spot["volume"] = df_spot["volume"] / multiplier
         df = pd.merge( df_spot[["open_time", "close"]], df_perp[["open_time", "close"]], on="open_time", how="inner", suffixes=["Spot", "Perps"] )
         df["spread"] = (df["closeSpot"] - df["closePerps"]) / (df["closePerps"]) * 10000
         return df["spread"].mean(), df["spread"].values[-1], exchange_spot, exchange_perp
