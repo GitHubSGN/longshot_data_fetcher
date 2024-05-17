@@ -72,6 +72,51 @@ def get_bybit_open_interest(symbol, category, start_time=None, end_time=None):
 
     return df
 
+def get_bybit_funding_rate(symbol, category, start_time=None, end_time=None):
+    base_url = "https://api.bybit.com/v5/market/funding/history"
+    params = {
+        "category": category,
+        "symbol": symbol,
+        "limit": 200
+    }
+
+    if start_time:
+        params["startTime"] = start_time
+    if end_time:
+        params["endTime"] = end_time
+
+    all_data = []
+    while True:
+        response = requests.get(base_url, params=params)
+        data = response.json()
+
+        if data["retCode"] != 0:
+            raise Exception(f"API returned error: {data['retMsg']}")
+
+        result = data["result"]
+        list_data = result["list"]
+        if not list_data:
+            break
+
+        all_data.extend(list_data)
+
+        end_time = list_data[-1]["fundingRateTimestamp"]
+        params["endTime"] = end_time
+
+        if len(list_data) < 200:
+            break
+
+    df = pd.DataFrame(all_data)
+    df["fundingRate"] = df["fundingRate"].astype(float)
+    df["fundingRateTimestamp"] = pd.to_numeric(df["fundingRateTimestamp"])
+    df["fundingRateTimestamp"] = pd.to_datetime(df["fundingRateTimestamp"], unit='ms')
+    df = df[["symbol", "fundingRate", "fundingRateTimestamp"]]
+
+    # 排除重复的 fundingRateTimestamp
+    df = df.drop_duplicates(subset=["fundingRateTimestamp"])
+
+    return df
+
 if __name__ == '__main__':
     symbol = "1000PEPEUSDT"
     category = "linear"

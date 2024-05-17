@@ -2,7 +2,7 @@ import os
 import pandas as pd
 from datetime import datetime
 
-from data_common.crawl_bybit_requests import get_bybit_open_interest
+from data_common.crawl_bybit_requests import get_bybit_open_interest, get_bybit_funding_rate
 from data_common.crawl_common import get_ohlcv_df
 from param import tokens_list, tokens_multiplier_dict, data_dir
 from tools.date_util import datetime_to_timestamp_tz0
@@ -58,7 +58,6 @@ def get_spot_ohlcv(token: str, start_str: str, end_str: str, exchange: str = Non
     if df_spot is not None:
         df_spot = df_spot.loc[ (df_spot["ts"]>=start_ts) & (df_spot["ts"]<end_ts), : ]
     return df_spot, exchange_spot
-
 
 def get_perp_ohlcv(token: str, start_str: str, end_str: str, exchange: str = None):
     exchanges = [exchange] if exchange is not None else exchanges_prop
@@ -137,6 +136,45 @@ def get_open_interest(token: str, start_str: str, end_str: str, exchange: str = 
         df = df.loc[ (df["ts"]>=start_ts) & (df["ts"]<end_ts), : ]
     return df
 
+def get_funding_rate(token: str, start_str: str, end_str: str, exchange: str = 'bybit'):
+    if exchange != 'bybit':
+        raise ValueError("Sorry. Only Bybit is allowed to get funding rate.")
+
+    start_time_ts = datetime_to_timestamp_tz0(datetime.strptime(start_time_str, "%Y-%m-%d"))
+    end_time_ts = datetime_to_timestamp_tz0(datetime.strptime(end_time_str, "%Y-%m-%d"))
+
+    df = None
+    exchanges = [exchange] if exchange is not None else exchanges_prop
+    symbol_proposal = perp_symbol_proposal(token)
+    for (exchange, symbol) in [(exchange, symbol) for exchange in exchanges for symbol in symbol_proposal]:
+        try:
+            xlsx_fn = os.path.join(data_dir, f"{start_time_str}-{end_time_str}", f"{token}_perp_{exchange}_fr_{start_time_str}_{start_time_str}.xlsx")
+            create_directory(xlsx_fn)
+
+            if os.path.exists(xlsx_fn):
+                df = pd.read_excel(xlsx_fn, index_col=False)
+            else:
+                isymbol = symbol.split(":")[0].replace(f"/", "")
+                df = get_bybit_funding_rate(isymbol, "linear", start_time=start_time_ts, end_time=end_time_ts)
+                df.rename(columns={"fundingRateTimestamp":"open_time"}, inplace=True)
+                df["open_time"] = df["open_time"].apply(lambda x: str(x))
+                df["ts"] = df["open_time"].apply(lambda x: datetime_to_timestamp_tz0(datetime.strptime(x, "%Y-%m-%d %H:%M:%S")))
+                df = df.iloc[::-1]
+                df.to_excel(xlsx_fn, index=False)
+            if len(df)==0:
+                df = None
+                continue
+            break
+        except:
+            print(f"No {symbol} in {exchange}...")
+            continue
+
+    start_ts = datetime_to_timestamp_tz0(datetime.strptime(start_str, "%Y-%m-%d"))
+    end_ts = datetime_to_timestamp_tz0(datetime.strptime(end_str, "%Y-%m-%d"))
+    if df is not None:
+        df = df.loc[ (df["ts"]>=start_ts) & (df["ts"]<end_ts), : ]
+    return df
+
 def save_all_token_data():
     for token in tokens_list:
     # for token in ["BTC"]:
@@ -145,7 +183,7 @@ def save_all_token_data():
         # print(f"Now {token} Perps: {tokens_list.index(token) + 1} of {len(tokens_list)}")
         # df, exchanges_perp, symbol_perp = get_perp_ohlcv(token, start_time_str, end_time_str)
         print(f"Now {token} OI: {tokens_list.index(token) + 1} of {len(tokens_list)}")
-        df = get_open_interest(token, start_time_str, end_time_str)
+        df = get_funding_rate(token, start_time_str, end_time_str)
 
 
 if __name__ == "__main__":
