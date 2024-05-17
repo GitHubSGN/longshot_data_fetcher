@@ -1,7 +1,6 @@
 import os
-import re
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from crawl_common import get_ohlcv_df
 from param import tokens_list, tokens_multiplier_dict, data_dir
@@ -47,7 +46,7 @@ def get_spot_ohlcv(token: str, start_str: str, end_str: str, exchange: str = Non
     end_ts = datetime_to_timestamp_tz0(datetime.strptime(end_str, "%Y-%m-%d"))
     if df_spot is not None:
         df_spot = df_spot.loc[ (df_spot["ts"]>=start_ts) & (df_spot["ts"]<end_ts), : ]
-    return df_spot
+    return df_spot, exchange_spot
 
 
 def get_perp_ohlcv(token: str, start_str: str, end_str: str, exchange: str = None):
@@ -87,14 +86,14 @@ def get_perp_ohlcv(token: str, start_str: str, end_str: str, exchange: str = Non
     end_ts = datetime_to_timestamp_tz0(datetime.strptime(end_str, "%Y-%m-%d"))
     if df_perp is not None:
         df_perp = df_perp.loc[ (df_perp["ts"]>=start_ts) & (df_perp["ts"]<end_ts), : ]
-    return df_perp
+    return df_perp, exchange_perp, symbol_perp
 
 def save_all_token_spot_perps():
     for token in tokens_list:
         print(f"Now {token} Spot: {tokens_list.index(token) + 1} of {len(tokens_list)}")
-        df = get_spot_ohlcv(token, start_time_str, end_time_str)
+        df, exchanges_spot = get_spot_ohlcv(token, start_time_str, end_time_str)
         print(f"Now {token} Perps: {tokens_list.index(token) + 1} of {len(tokens_list)}")
-        df = get_perp_ohlcv(token, start_time_str, end_time_str)
+        df, exchanges_perp, symbol_perp = get_perp_ohlcv(token, start_time_str, end_time_str)
 
 if __name__ == "__main__":
     save_all_token_spot_perps()
