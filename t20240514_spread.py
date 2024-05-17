@@ -2,9 +2,8 @@ import re
 import pandas as pd
 from datetime import datetime, timedelta
 
-from data_api import get_spot_ohlcv, get_perp_ohlcv
-from param import tokens_list, tokens_multiplier_dict
-
+from data_common.data_api import get_spot_ohlcv, get_perp_ohlcv
+from param import tokens_list
 
 '''exp setting'''
 # tokens = ["TAO", "1000PEPE", "ARB", "WIF", "LDO", "GALA", "OP", "LINK", "AVAX", "NEAR", "SOL", "FIL", "ORDI", "TON"]

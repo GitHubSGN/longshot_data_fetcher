@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 import pandas as pd
 
-from data_api import get_spot_ohlcv, get_perp_ohlcv
+from data_common.data_api import get_spot_ohlcv, get_perp_ohlcv
 from param import tokens_list
 
 '''exp setting'''

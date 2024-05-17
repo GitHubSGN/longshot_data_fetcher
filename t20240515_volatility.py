@@ -2,9 +2,8 @@ import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
 
-from crawl_common import get_ohlcv_df
-from param import tokens_list, tokens_multiplier_dict
-
+from data_common.crawl_common import get_ohlcv_df
+from param import tokens_list
 
 '''exp setting'''
 tokens = tokens_list        # tokens_1000_list

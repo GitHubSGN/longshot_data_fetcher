@@ -1,9 +1,8 @@
 from datetime import datetime, timedelta
-
-import requests
 import pandas as pd
 
-from crawl_common import get_ohlcv_df
+from data_common.crawl_bybit_requests import get_bybit_instruments
+from data_common.crawl_common import get_ohlcv_df
 from param import tokens_list, tokens_multiplier_dict
 
 '''exp setting'''
@@ -16,36 +15,6 @@ exchanges = ['bybit', "binance", "okx"]
 timeframe = '1h'
 limit = 1000
 
-def get_bybit_instruments() -> pd.DataFrame:
-    url = "https://api.bybit.com/v5/market/instruments-info"
-    params = {
-        "category": "linear"
-    }
-
-    try:
-        response = requests.get(url, params=params)
-        response.raise_for_status()
-        data = response.json()
-
-        data_list = data['result']['list']
-        df = pd.DataFrame(data_list, columns=['symbol', 'status', 'baseCoin', 'priceScale'])
-
-        df['tickSize'] = [item['priceFilter']['tickSize'] for item in data_list]
-        df['minNotionalValue'] = [item['lotSizeFilter']['minNotionalValue'] for item in data_list]
-        df['upperFundingRate'] = [item['upperFundingRate'] for item in data_list]
-        df['lowerFundingRate'] = [item['lowerFundingRate'] for item in data_list]
-
-        df['priceScale'] = df['priceScale'].astype(int)
-        df['tickSize'] = df['tickSize'].astype(float)
-        df['minNotionalValue'] = df['minNotionalValue'].astype(float)
-        df['upperFundingRate'] = df['upperFundingRate'].astype(float)
-        df['lowerFundingRate'] = df['lowerFundingRate'].astype(float)
-
-        return df
-    except requests.exceptions.HTTPError as http_err:
-        print(f"HTTP error occurred: {http_err}")
-    except Exception as err:
-        print(f"An error occurred: {err}")
 
 def save_tick_price():
     instruments_info = get_bybit_instruments()
