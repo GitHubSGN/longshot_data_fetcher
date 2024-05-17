@@ -2,7 +2,8 @@ import os
 import pandas as pd
 from datetime import datetime
 
-from crawl_common import get_ohlcv_df
+from data_common.crawl_bybit_requests import get_bybit_open_interest
+from data_common.crawl_common import get_ohlcv_df
 from param import tokens_list, tokens_multiplier_dict, data_dir
 from tools.date_util import datetime_to_timestamp_tz0
 from tools.dir_util import create_directory
@@ -14,6 +15,16 @@ start_time_str = '2024-01-01'
 exchanges_prop = ['bybit', "binance", "okx"]
 timeframe = '1h'
 limit = 1000
+
+def perp_symbol_proposal(token: str):
+    symbol_proposal = [token]
+    for multiplier, tokens_multiplier_list in tokens_multiplier_dict.items():
+        if token in tokens_multiplier_list:
+            symbol_proposal = [f"{multiplier}{token}", f"{token}{multiplier}",token] if token in tokens_multiplier_list else [token]
+            break
+    symbol_proposal = [f'{token}/USDT:USDT' for token in symbol_proposal]
+    return symbol_proposal
+
 
 def get_spot_ohlcv(token: str, start_str: str, end_str: str, exchange: str = None):
     exchanges = [exchange] if exchange is not None else exchanges_prop
@@ -55,12 +66,7 @@ def get_perp_ohlcv(token: str, start_str: str, end_str: str, exchange: str = Non
     '''perps price history'''
     df_perp = None
     exchange_perp, symbol_perp = None, None
-    symbol_proposal = [token]
-    for multiplier, tokens_multiplier_list in tokens_multiplier_dict.items():
-        if token in tokens_multiplier_list:
-            symbol_proposal = [f"{multiplier}{token}", f"{token}{multiplier}", token] if token in tokens_multiplier_list else [token]
-            break
-    symbol_proposal = [f'{token}/USDT:USDT' for token in symbol_proposal]
+    symbol_proposal = perp_symbol_proposal(token)
     for (exchange, symbol) in [(exchange, symbol) for exchange in exchanges for symbol in symbol_proposal]:
         try:
             xlsx_fn = os.path.join(data_dir, f"{start_time_str}-{end_time_str}", f"{token}_perp_{exchange}_{start_time_str}_{start_time_str}.xlsx")
@@ -88,12 +94,59 @@ def get_perp_ohlcv(token: str, start_str: str, end_str: str, exchange: str = Non
         df_perp = df_perp.loc[ (df_perp["ts"]>=start_ts) & (df_perp["ts"]<end_ts), : ]
     return df_perp, exchange_perp, symbol_perp
 
-def save_all_token_spot_perps():
+def get_open_interest(token: str, start_str: str, end_str: str, exchange: str = 'bybit'):
+    if exchange != 'bybit':
+        raise ValueError("Sorry. Only Bybit is allowed to get openinterest.")
+
+    start_time_ts = datetime_to_timestamp_tz0(datetime.strptime(start_time_str, "%Y-%m-%d"))
+    end_time_ts = datetime_to_timestamp_tz0(datetime.strptime(end_time_str, "%Y-%m-%d"))
+
+    df = None
+    exchanges = [exchange] if exchange is not None else exchanges_prop
+    symbol_proposal = perp_symbol_proposal(token)
+    for (exchange, symbol) in [(exchange, symbol) for exchange in exchanges for symbol in symbol_proposal]:
+        try:
+            xlsx_fn = os.path.join(data_dir, f"{start_time_str}-{end_time_str}", f"{token}_perp_{exchange}_oi_{start_time_str}_{start_time_str}.xlsx")
+            create_directory(xlsx_fn)
+
+            if os.path.exists(xlsx_fn):
+                df = pd.read_excel(xlsx_fn, index_col=False)
+            else:
+                isymbol = symbol.split(":")[0].replace(f"/", "")
+                df = get_bybit_open_interest(isymbol, "linear", start_time=start_time_ts, end_time=end_time_ts)
+                df.rename(columns={"timestamp":"open_time"}, inplace=True)
+                df["open_time"] = df["open_time"].apply(lambda x: str(x))
+                df["ts"] = df["open_time"].apply(lambda x: datetime_to_timestamp_tz0(datetime.strptime(x, "%Y-%m-%d %H:%M:%S")))
+                df_perp, _, _ = get_perp_ohlcv(token, start_time_str, end_time_str, exchange)
+                df = pd.merge( df_perp[["ts", "open"]], df, on="ts", how="inner" )
+                df["oi"] = df["oi"] * df["open"]
+                del df["open"]
+                del df["category"]
+                df.to_excel(xlsx_fn, index=False)
+            if len(df)==0:
+                df = None
+                continue
+            break
+        except:
+            print(f"No {symbol} in {exchange}...")
+            continue
+
+    start_ts = datetime_to_timestamp_tz0(datetime.strptime(start_str, "%Y-%m-%d"))
+    end_ts = datetime_to_timestamp_tz0(datetime.strptime(end_str, "%Y-%m-%d"))
+    if df is not None:
+        df = df.loc[ (df["ts"]>=start_ts) & (df["ts"]<end_ts), : ]
+    return df
+
+def save_all_token_data():
     for token in tokens_list:
-        print(f"Now {token} Spot: {tokens_list.index(token) + 1} of {len(tokens_list)}")
-        df, exchanges_spot = get_spot_ohlcv(token, start_time_str, end_time_str)
-        print(f"Now {token} Perps: {tokens_list.index(token) + 1} of {len(tokens_list)}")
-        df, exchanges_perp, symbol_perp = get_perp_ohlcv(token, start_time_str, end_time_str)
+    # for token in ["BTC"]:
+        # print(f"Now {token} Spot: {tokens_list.index(token) + 1} of {len(tokens_list)}")
+        # df, exchanges_spot = get_spot_ohlcv(token, start_time_str, end_time_str)
+        # print(f"Now {token} Perps: {tokens_list.index(token) + 1} of {len(tokens_list)}")
+        # df, exchanges_perp, symbol_perp = get_perp_ohlcv(token, start_time_str, end_time_str)
+        print(f"Now {token} OI: {tokens_list.index(token) + 1} of {len(tokens_list)}")
+        df = get_open_interest(token, start_time_str, end_time_str)
+
 
 if __name__ == "__main__":
-    save_all_token_spot_perps()
+    save_all_token_data()
