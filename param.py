@@ -1,3 +1,6 @@
+import os
+from tools.dir_util import project_dir
+
 # all tokens (351)
 # tokens_list = ["POPCAT","SILLY","NKN","RATS","CAT","IQ","ORBS","BLZ","TAO","AUCTION","MYRO","LOOM",
 #                "TRB","AIDOGE","ZEN","COTI","IOTA","XNO","BOND","REEF","LTO","SCA","ZKF","SLERF","LAI",
@@ -21,3 +24,6 @@ tokens_multiplier_dict = {
     10000: ["SATS","LADYS", "WENUSDT", "COQ", "STARL", "NFT"],
     10000000: ["AIDOGE"]
 }
+
+'''dir'''
+data_dir = os.path.join(project_dir(), "data")
