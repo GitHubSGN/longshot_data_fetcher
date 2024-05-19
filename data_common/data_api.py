@@ -179,6 +179,13 @@ def get_funding_rate(token: str, start_str: str = start_time_str, end_str: str =
         df.reset_index(drop=True, inplace=True)
     return df
 
+def get_ticksize():
+    xlsx_fn = os.path.join(data_dir, f"2024-04-30_2024-05-14", f"132token", f"TickSize_2024-05-13_2024-05-14.xlsx")
+    df = pd.read_excel(xlsx_fn, index_col=False)
+
+    return df
+
+
 def save_all_token_data():
     for token in tokens_list:
     # for token in ["BTC"]:
@@ -191,4 +198,6 @@ def save_all_token_data():
 
 
 if __name__ == "__main__":
-    save_all_token_data()
+    # save_all_token_data()
+    df = get_ticksize()
+    print("Success.")
