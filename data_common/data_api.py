@@ -57,6 +57,7 @@ def get_spot_ohlcv(token: str, start_str: str = start_time_str, end_str: str = e
     end_ts = datetime_to_timestamp_tz0(datetime.strptime(end_str, "%Y-%m-%d"))
     if df_spot is not None:
         df_spot = df_spot.loc[ (df_spot["ts"]>=start_ts) & (df_spot["ts"]<end_ts), : ]
+        df_spot.reset_index(drop=True, inplace=True)
     return df_spot, exchange_spot
 
 def get_perp_ohlcv(token: str, start_str: str = start_time_str, end_str: str = end_time_str, exchange: str = None):
@@ -91,6 +92,7 @@ def get_perp_ohlcv(token: str, start_str: str = start_time_str, end_str: str = e
     end_ts = datetime_to_timestamp_tz0(datetime.strptime(end_str, "%Y-%m-%d"))
     if df_perp is not None:
         df_perp = df_perp.loc[ (df_perp["ts"]>=start_ts) & (df_perp["ts"]<end_ts), : ]
+        df_perp.reset_index(drop=True, inplace=True)
     return df_perp, exchange_perp, symbol_perp
 
 def get_open_interest(token: str, start_str: str = start_time_str, end_str: str = end_time_str, exchange: str = 'bybit'):
@@ -134,6 +136,7 @@ def get_open_interest(token: str, start_str: str = start_time_str, end_str: str 
     end_ts = datetime_to_timestamp_tz0(datetime.strptime(end_str, "%Y-%m-%d"))
     if df is not None:
         df = df.loc[ (df["ts"]>=start_ts) & (df["ts"]<end_ts), : ]
+        df.reset_index(drop=True, inplace=True)
     return df
 
 def get_funding_rate(token: str, start_str: str = start_time_str, end_str: str = end_time_str, exchange: str = 'bybit'):
@@ -173,6 +176,7 @@ def get_funding_rate(token: str, start_str: str = start_time_str, end_str: str =
     end_ts = datetime_to_timestamp_tz0(datetime.strptime(end_str, "%Y-%m-%d"))
     if df is not None:
         df = df.loc[ (df["ts"]>=start_ts) & (df["ts"]<end_ts), : ]
+        df.reset_index(drop=True, inplace=True)
     return df
 
 def save_all_token_data():
