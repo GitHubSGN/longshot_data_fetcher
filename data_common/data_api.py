@@ -26,7 +26,7 @@ def perp_symbol_proposal(token: str):
     return symbol_proposal
 
 
-def get_spot_ohlcv(token: str, start_str: str, end_str: str, exchange: str = None):
+def get_spot_ohlcv(token: str, start_str: str = start_time_str, end_str: str = end_time_str, exchange: str = None):
     exchanges = [exchange] if exchange is not None else exchanges_prop
 
     '''spot price history'''
@@ -59,7 +59,7 @@ def get_spot_ohlcv(token: str, start_str: str, end_str: str, exchange: str = Non
         df_spot = df_spot.loc[ (df_spot["ts"]>=start_ts) & (df_spot["ts"]<end_ts), : ]
     return df_spot, exchange_spot
 
-def get_perp_ohlcv(token: str, start_str: str, end_str: str, exchange: str = None):
+def get_perp_ohlcv(token: str, start_str: str = start_time_str, end_str: str = end_time_str, exchange: str = None):
     exchanges = [exchange] if exchange is not None else exchanges_prop
 
     '''perps price history'''
@@ -93,7 +93,7 @@ def get_perp_ohlcv(token: str, start_str: str, end_str: str, exchange: str = Non
         df_perp = df_perp.loc[ (df_perp["ts"]>=start_ts) & (df_perp["ts"]<end_ts), : ]
     return df_perp, exchange_perp, symbol_perp
 
-def get_open_interest(token: str, start_str: str, end_str: str, exchange: str = 'bybit'):
+def get_open_interest(token: str, start_str: str = start_time_str, end_str: str = end_time_str, exchange: str = 'bybit'):
     if exchange != 'bybit':
         raise ValueError("Sorry. Only Bybit is allowed to get openinterest.")
 
@@ -136,7 +136,7 @@ def get_open_interest(token: str, start_str: str, end_str: str, exchange: str = 
         df = df.loc[ (df["ts"]>=start_ts) & (df["ts"]<end_ts), : ]
     return df
 
-def get_funding_rate(token: str, start_str: str, end_str: str, exchange: str = 'bybit'):
+def get_funding_rate(token: str, start_str: str = start_time_str, end_str: str = end_time_str, exchange: str = 'bybit'):
     if exchange != 'bybit':
         raise ValueError("Sorry. Only Bybit is allowed to get funding rate.")
 
