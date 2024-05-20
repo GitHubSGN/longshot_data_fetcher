@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 
 from data_common.data_api import get_spot_ohlcv, get_perp_ohlcv
+from func_common.basis_spread import cal_basis_spread
 from param import tokens_list
 
 '''exp setting'''
@@ -31,14 +32,8 @@ def get_mean_spread(token: str):
     if df_spot is None or df_perp is None:
         return None, None, None, None
     else:
-        matches = re.findall(r"100*", symbol_perp.split(f"/")[0])
-        if len(matches)>0:
-            multiplier = int(matches[0])
-            df_spot[['open', 'high', 'low', 'close']] = df_spot[['open', 'high', 'low', 'close']] * multiplier
-            df_spot["volume"] = df_spot["volume"] / multiplier
-        df = pd.merge( df_spot[["open_time", "close"]], df_perp[["open_time", "close"]], on="open_time", how="inner", suffixes=["Spot", "Perps"] )
-        df["spread"] = (df["closeSpot"] - df["closePerps"]) / (df["closePerps"]) * 10000
-        return df["spread"].mean(), df["spread"].values[-1], exchange_spot, exchange_perp
+        ms, ls, _ = cal_basis_spread(df_spot, df_perp, symbol_perp)
+        return ms, ls, exchange_spot, exchange_perp
 
 def cal_save_long_short_spread():
     res = []
