@@ -7,7 +7,7 @@ from param import tokens_list
 
 '''exp setting'''
 tokens = tokens_list        # tokens_1000_list
-end_time_str = '2024-05-14'
+end_time_str = '2024-05-21'
 time_winodw = 14
 start_time_str = datetime.strptime(end_time_str, "%Y-%m-%d") - timedelta(days = time_winodw)
 start_time_str = start_time_str.strftime("%Y-%m-%d")        # '2024-05-01'

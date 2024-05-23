@@ -2,17 +2,18 @@ import re
 import pandas as pd
 from datetime import datetime, timedelta
 
+from data_common.crawl_common import get_ohlcv_df
 from data_common.data_api import get_spot_ohlcv, get_perp_ohlcv
 from func_common.basis_spread import cal_basis_spread
-from param import tokens_list
+from param import tokens_list, tokens_multiplier_dict
 
 '''exp setting'''
 # tokens = ["TAO", "1000PEPE", "ARB", "WIF", "LDO", "GALA", "OP", "LINK", "AVAX", "NEAR", "SOL", "FIL", "ORDI", "TON"]
 # tokens = ["MASK","MANA","FTM","BCH","SATS"]
 # tokens = ["SATS"]
 tokens = tokens_list        # tokens_1000_list
-end_time_str = '2024-05-14'
-time_winodw = 30
+end_time_str = '2024-05-21'
+time_winodw = 14
 start_time_str = datetime.strptime(end_time_str, "%Y-%m-%d") - timedelta(days = time_winodw)
 start_time_str = start_time_str.strftime("%Y-%m-%d")        # '2024-05-01'
 exchanges = ['bybit', "binance", "okx"]
@@ -23,10 +24,42 @@ def get_mean_spread(token: str):
     print(f"Now {token}: {tokens.index(token)+1} of {len(tokens)}")
 
     '''spot price history'''
-    df_spot, exchange_spot = get_spot_ohlcv(token, start_time_str, end_time_str)
+    symbol = f"{token}/USDT"
+    df_spot = None
+    exchange_spot = None
+    for exchange in exchanges:
+        try:
+            df_spot = get_ohlcv_df(symbol, start_time_str, end_time_str, exchange, timeframe, limit)
+            exchange_spot = exchange
+            if len(df_spot)==0:
+                df_spot = None
+                continue
+            break
+        except:
+            print(f"No {symbol} in {exchange}...")
+            continue
 
     '''perps price history'''
-    df_perp, exchange_perp, symbol_perp = get_perp_ohlcv(token, start_time_str, end_time_str)
+    df_perp = None
+    exchange_perp, symbol_perp = None, None
+    symbol_proposal = [token]
+    for multiplier, tokens_multiplier_list in tokens_multiplier_dict.items():
+        if token in tokens_multiplier_list:
+            symbol_proposal = [f"{multiplier}{token}", f"{token}{multiplier}", token] if token in tokens_multiplier_list else [token]
+            break
+    symbol_proposal = [f'{token}/USDT:USDT' for token in symbol_proposal]
+    for (exchange, symbol) in [(exchange, symbol) for exchange in exchanges for symbol in symbol_proposal]:
+        try:
+            df_perp = get_ohlcv_df(symbol, start_time_str, end_time_str, exchange, timeframe, limit)
+            exchange_perp = exchange
+            symbol_perp = symbol
+            if len(df_perp)==0:
+                df_perp = None
+                continue
+            break
+        except:
+            print(f"No {symbol} in {exchange}...")
+            continue
 
     '''average spread &. last spread'''
     if df_spot is None or df_perp is None:
