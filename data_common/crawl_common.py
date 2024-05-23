@@ -3,6 +3,9 @@ import time
 import datetime as dt
 import ccxt
 
+from tools.date_util import datetime_to_timestamp_tz0
+
+
 def convert_to_dataframe(all_ohlcvs, symbol,end_time,exchange):
     df = pd.DataFrame(all_ohlcvs, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
     df = df[df['timestamp'] < end_time]
@@ -33,10 +36,18 @@ def timeframe_to_milliseconds(timeframe):
 def get_ohlcv_df(symbol,start_time_str,end_time_str,exchange,timeframe,limit):
     # 调整时间格式
     exchange = eval('ccxt.' + exchange + '()')
-    start_time = dt.datetime.strptime(start_time_str, '%Y-%m-%d')
-    start_time = int(start_time.timestamp() * 1000)
-    end_time = dt.datetime.strptime(end_time_str, '%Y-%m-%d')
-    end_time = int(end_time.timestamp() * 1000)
+    try:
+        start_time = dt.datetime.strptime(start_time_str, '%Y-%m-%d %H:%M:%S')
+    except:
+        start_time = dt.datetime.strptime(start_time_str, '%Y-%m-%d')
+    # start_time = int(start_time.timestamp() * 1000)
+    start_time = datetime_to_timestamp_tz0(start_time)
+    try:
+        end_time = dt.datetime.strptime(end_time_str, '%Y-%m-%d %H:%M:%S')
+    except:
+        end_time = dt.datetime.strptime(end_time_str, '%Y-%m-%d')
+    # end_time = int(end_time.timestamp() * 1000)
+    end_time = datetime_to_timestamp_tz0(end_time)
 
     all_ohlcvs = []
     restart_time = start_time
