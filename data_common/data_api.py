@@ -185,6 +185,20 @@ def get_ticksize():
 
     return df
 
+def get_raw_data(token: str, start_str: str = start_time_str, end_str: str = end_time_str):
+    """
+    spot ohlcv, perp ohlcv, open interest, funding rate
+    :return: pd.DataFrame
+    """
+    df_spot, _ = get_spot_ohlcv(token, start_str = start_str, end_str = end_str, exchange="bybit")
+    df_perp, _, symbol_perp = get_perp_ohlcv(token, start_str = start_str, end_str = end_str, exchange="bybit")
+    df_fr = get_funding_rate(token, start_str = start_str, end_str = end_str)
+    df_oi = get_open_interest(token, start_str = start_str, end_str = end_str)
+    df_spot.rename(columns = {"open":"so", "high":"sh", "low":"sl", "close":"sc", "volume":"sv"}, inplace = True)
+    print("Done")
+
+    return True
+
 
 def save_all_token_data():
     for token in tokens_list:
@@ -193,11 +207,15 @@ def save_all_token_data():
         # df, exchanges_spot = get_spot_ohlcv(token, start_time_str, end_time_str)
         # print(f"Now {token} Perps: {tokens_list.index(token) + 1} of {len(tokens_list)}")
         # df, exchanges_perp, symbol_perp = get_perp_ohlcv(token, start_time_str, end_time_str)
+        # print(f"Now {token} OI: {tokens_list.index(token) + 1} of {len(tokens_list)}")
+        # df = get_funding_rate(token, start_time_str, end_time_str)
+
         print(f"Now {token} OI: {tokens_list.index(token) + 1} of {len(tokens_list)}")
-        df = get_funding_rate(token, start_time_str, end_time_str)
+        # df = get_funding_rate(token, start_time_str, end_time_str)
 
 
 if __name__ == "__main__":
     # save_all_token_data()
-    df = get_ticksize()
+    # df = get_ticksize()
+    df = get_raw_data("BTC")
     print("Success.")
