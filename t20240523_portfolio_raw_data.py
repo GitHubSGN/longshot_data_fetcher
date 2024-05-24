@@ -9,7 +9,7 @@ from param import tokens_list, tokens_multiplier_dict
 
 '''exp setting'''
 tokens = tokens_list
-end_time_str = '2024-05-23 7:00:00'     # UTC Time Zone
+end_time_str = '2024-05-24 5:00:00'     # UTC Time Zone
 time_winodw = 7
 start_time_str = datetime.strptime(end_time_str, "%Y-%m-%d %H:%M:%S") - timedelta(days = time_winodw)
 start_time_str = start_time_str.strftime("%Y-%m-%d %H:%M:%S")
@@ -87,8 +87,8 @@ def cal_raw_data(token: str, instruments_info: pd.DataFrame = None):
 def cal_save_long_short_spread():
     res = []
     instruments_info = get_bybit_instruments()
-    # for token in tokens:
-    for token in ["RNDR", "ONDO", "MANA"]:
+    for token in tokens:
+    # for token in ["RNDR", "ONDO", "MANA"]:
         ls, ms, volatility, tickSize, perp_price, volume_spot, volume_perp, exchange_spot, exchange_perp, symbol_perp =\
             cal_raw_data(token,instruments_info)
         if ms is None:
