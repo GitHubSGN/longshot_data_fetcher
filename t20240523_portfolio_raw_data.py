@@ -8,8 +8,8 @@ from func_common.basis_spread import cal_basis_spread
 from param import tokens_list, tokens_multiplier_dict
 
 '''exp setting'''
-tokens = tokens_list
-end_time_str = '2024-05-24 5:00:00'     # UTC Time Zone
+tokens = tokens_list + ["WIF", "TAO"]
+end_time_str = '2024-05-29 1:00:00'     # UTC Time Zone
 time_winodw = 7
 start_time_str = datetime.strptime(end_time_str, "%Y-%m-%d %H:%M:%S") - timedelta(days = time_winodw)
 start_time_str = start_time_str.strftime("%Y-%m-%d %H:%M:%S")
@@ -77,24 +77,26 @@ def cal_raw_data(token: str, instruments_info: pd.DataFrame = None):
     else:
         print(f"df_spot shape: {df_spot.shape}, df_perp shape: {df_perp.shape}")
         print(f" df_spot / df_perp last open time: {df_spot['open_time'].values[-1]} / {df_perp['open_time'].values[-1]}.")
-        ms, ls, _ = cal_basis_spread(df_spot, df_perp, symbol_perp)
+        ms, ls, _, df_spread = cal_basis_spread(df_spot, df_perp, symbol_perp)
+        ss = df_spread["spread"].std()
+        ss1d = df_spread["spread"][-24:].std()
         volatility = np.log(df_spot["close"]).diff().std() * np.sqrt(pd.to_timedelta("365d") / pd.to_timedelta(timeframe))
         perp_price = df_perp["close"].values[-1]
         volume_spot = (df_spot["volume"].iloc[-24:] * df_spot["close"].iloc[-24:]).sum()
         volume_perp = (df_perp["volume"].iloc[-24:] * df_perp["close"].iloc[-24:]).sum()
-        return ls, ms, volatility, tickSize, perp_price, volume_spot, volume_perp, exchange_spot, exchange_perp, symbol_perp
+        return ls, ms, ss, ss1d, volatility, tickSize, perp_price, volume_spot, volume_perp, exchange_spot, exchange_perp, symbol_perp
 
 def cal_save_long_short_spread():
     res = []
     instruments_info = get_bybit_instruments()
     for token in tokens:
     # for token in ["RNDR", "ONDO", "MANA"]:
-        ls, ms, volatility, tickSize, perp_price, volume_spot, volume_perp, exchange_spot, exchange_perp, symbol_perp =\
+        ls, ms, ss, ss1d, volatility, tickSize, perp_price, volume_spot, volume_perp, exchange_spot, exchange_perp, symbol_perp =\
             cal_raw_data(token,instruments_info)
         if ms is None:
             continue
-        res.append([token, ls, ms, volatility, tickSize, perp_price, volume_spot, volume_perp, exchange_spot, exchange_perp, symbol_perp])
-        df = pd.DataFrame(res, columns=["token", "Bs", "MeanBs", "vol(p.a.)", "tickSize", "perp_price", "spot_volume_24h", "perp_volume_24h", "exchange_spot", "exchange_perp", "symbol_perp"])
+        res.append([token, ls, ms, ss, ss1d, volatility, tickSize, perp_price, volume_spot, volume_perp, exchange_spot, exchange_perp, symbol_perp])
+        df = pd.DataFrame(res, columns=["token", "Bs", "MeanBs", "StdBs", "StdBs1d", "vol(p.a.)", "tickSize", "perp_price", "spot_volume_24h", "perp_volume_24h", "exchange_spot", "exchange_perp", "symbol_perp"])
         df.to_excel(f"Raw_{start_time_str[:10]}_{end_time_str[:10]}.xlsx", index=False)
 
 if __name__ == "__main__":
