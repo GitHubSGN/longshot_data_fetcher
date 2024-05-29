@@ -15,4 +15,5 @@ def cal_basis_spread(df_spot: pd.DataFrame, df_perp: pd.DataFrame, symbol_perp: 
         df = pd.merge(df_spot[["open_time", "close"]], df_perp[["open_time", "close"]], on="open_time", how="inner",
                       suffixes=["Spot", "Perps"])
         df["spread"] = (df["closeSpot"] - df["closePerps"]) / (df["closePerps"]) * 10000
-        return df["spread"].mean(), df["spread"].values[-1], df["spread"].values[0]
+
+        return df["spread"].mean(), df["spread"].values[-1], df["spread"].values[0], df

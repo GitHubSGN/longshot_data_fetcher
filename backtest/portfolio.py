@@ -33,7 +33,7 @@ def portfolio_raw_data(current_date: str, factor_horizon: int = 14, predicted_ho
             fr = df_fr["fundingRate"].sum()
             fr_pa = fr/factor_horizon*365
 
-            ms, ls, _ = cal_basis_spread(df_spot, df_perp, symbol_perp)
+            ms, ls, _, _ = cal_basis_spread(df_spot, df_perp, symbol_perp)
 
             ticksize = df_tick.loc[ df_tick["token"]==token, "tickSize" ].values[0]
             price = df_perp["close"].values[-1]
@@ -82,7 +82,7 @@ def get_realized_return(current_date: str, predicted_horizon: int = 14):
             fr = df_fr["fundingRate"].sum()
             fr_pa = fr / predicted_horizon * 365
 
-            _, ls, fs = cal_basis_spread(df_spot, df_perp, symbol_perp)
+            _, ls, fs, _ = cal_basis_spread(df_spot, df_perp, symbol_perp)
 
             ticksize = df_tick.loc[df_tick["token"] == token, "tickSize"].values[0]
             price = df_perp["close"].values[0]

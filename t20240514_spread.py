@@ -65,7 +65,7 @@ def get_mean_spread(token: str):
     if df_spot is None or df_perp is None:
         return None, None, None, None
     else:
-        ms, ls, _ = cal_basis_spread(df_spot, df_perp, symbol_perp)
+        ms, ls, _, _ = cal_basis_spread(df_spot, df_perp, symbol_perp)
         return ms, ls, exchange_spot, exchange_perp
 
 def cal_save_long_short_spread():
