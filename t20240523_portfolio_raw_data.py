@@ -8,8 +8,8 @@ from func_common.basis_spread import cal_basis_spread
 from param import tokens_list, tokens_multiplier_dict
 
 '''exp setting'''
-tokens = tokens_list + ["WIF", "TAO"]
-end_time_str = '2024-05-29 1:00:00'     # UTC Time Zone
+tokens = tokens_list + ["WIF", "TAO"] + ["STRK"]
+end_time_str = '2024-06-04 0:00:00'     # UTC Time Zone
 time_winodw = 7
 start_time_str = datetime.strptime(end_time_str, "%Y-%m-%d %H:%M:%S") - timedelta(days = time_winodw)
 start_time_str = start_time_str.strftime("%Y-%m-%d %H:%M:%S")
