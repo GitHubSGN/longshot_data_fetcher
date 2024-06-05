@@ -4,16 +4,19 @@ from datetime import datetime, timedelta
 
 from data_common.crawl_bybit_requests import get_bybit_instruments
 from data_common.crawl_common import get_ohlcv_df
+from data_common.crawl_okx_requests import get_okx_instruments
 from func_common.basis_spread import cal_basis_spread
-from param import tokens_list, tokens_multiplier_dict
+from param import tokens_list, tokens_multiplier_dict, okx_token_list
 
 '''exp setting'''
 tokens = tokens_list + ["WIF", "TAO"] + ["STRK"]
-end_time_str = '2024-06-04 0:00:00'     # UTC Time Zone
+# tokens = okx_token_list
+end_time_str = '2024-06-05 0:00:00'     # UTC Time Zone
 time_winodw = 7
 start_time_str = datetime.strptime(end_time_str, "%Y-%m-%d %H:%M:%S") - timedelta(days = time_winodw)
 start_time_str = start_time_str.strftime("%Y-%m-%d %H:%M:%S")
-exchanges = ['bybit', "binance", "okx"]
+exchange = "bybit" #, 'bybit', "binance"
+exchanges = [exchange]
 timeframe = '1h'
 limit = 1000
 
@@ -59,7 +62,7 @@ def cal_raw_data(token: str, instruments_info: pd.DataFrame = None):
     for (exchange, symbol) in [(exchange, symbol) for exchange in exchanges for symbol in symbol_proposal]:
         try:
             df_perp = get_ohlcv_df(symbol, start_time_str, end_time_str, exchange, timeframe, limit)
-            isymbol = symbol.split(":")[0].replace(f"/", "")
+            isymbol = symbol.split(":")[0].replace(f"/", "") if exchange == "bybit" else symbol.split(":")[0].replace(f"/", "-")
             tickSize = instruments_info.loc[instruments_info['symbol'] == isymbol, "tickSize"].values[0]
             exchange_perp = exchange
             symbol_perp = symbol
@@ -90,18 +93,35 @@ def cal_raw_data(token: str, instruments_info: pd.DataFrame = None):
 
 def cal_save_long_short_spread():
     res = []
-    instruments_info = get_bybit_instruments()
-    for token in tokens:
-    # for token in ["RNDR", "ONDO", "MANA"]:
-        ls, ms, ms1d, mes7d, mes1d, ss, volatility, tickSize, perp_price, volume_spot, volume_perp, exchange_spot, exchange_perp, symbol_perp =\
-            cal_raw_data(token,instruments_info)
-        if ms is None:
-            continue
-        # res.append([token, ls, ms, ms1d, ss, volatility, tickSize, perp_price, volume_spot, volume_perp, exchange_spot, exchange_perp, symbol_perp])
-        # df = pd.DataFrame(res, columns=["token", "Bs", "MeanBs", "MeanBs1d", "StdBs", "vol(p.a.)", "tickSize", "perp_price", "spot_volume_24h", "perp_volume_24h", "exchange_spot", "exchange_perp", "symbol_perp"])
-        res.append([token, ls, ms, ms1d, mes7d, mes1d, ss, volatility, tickSize, perp_price, volume_spot, volume_perp, exchange_spot, exchange_perp, symbol_perp])
-        df = pd.DataFrame(res, columns=["token", "Bs", "MeanBs", "MeanBs1d", "MedianBs", "MedianBs1d", "StdBs", "vol(p.a.)", "tickSize", "perp_price", "spot_volume_24h", "perp_volume_24h", "exchange_spot", "exchange_perp", "symbol_perp"])
-        df.to_excel(f"Raw_{start_time_str[:10]}_{end_time_str[:10]}.xlsx", index=False)
+    if exchange == "okx":
+        instruments_info = get_okx_instruments()
+    elif exchange == "bybit":
+        instruments_info = get_bybit_instruments()
+    else:
+        raise ValueError("exchange can only be okx and bybit.")
+
+    xlsx_fn = f"Raw_[{exchange}]_{start_time_str[:10]}_{end_time_str[:10]}.xlsx"
+    except_tokens = []
+    for i_round in range(3):
+        cur_tokens = tokens if i_round == 0 else except_tokens
+        except_tokens = []
+        for token in cur_tokens:
+        # for token in ["RNDR", "ONDO", "MANA"]:
+            print(f"{i_round} round:")
+            try:
+                ls, ms, ms1d, mes7d, mes1d, ss, volatility, tickSize, perp_price, volume_spot, volume_perp, exchange_spot, exchange_perp, symbol_perp =\
+                    cal_raw_data(token,instruments_info)
+                if ms is None:
+                    continue
+                # res.append([token, ls, ms, ms1d, ss, volatility, tickSize, perp_price, volume_spot, volume_perp, exchange_spot, exchange_perp, symbol_perp])
+                # df = pd.DataFrame(res, columns=["token", "Bs", "MeanBs", "MeanBs1d", "StdBs", "vol(p.a.)", "tickSize", "perp_price", "spot_volume_24h", "perp_volume_24h", "exchange_spot", "exchange_perp", "symbol_perp"])
+                res.append([token, ls, ms, ms1d, mes7d, mes1d, ss, volatility, tickSize, perp_price, volume_spot, volume_perp, exchange_spot, exchange_perp, symbol_perp])
+                df = pd.DataFrame(res, columns=["token", "Bs", "MeanBs", "MeanBs1d", "MedianBs", "MedianBs1d", "StdBs", "vol(p.a.)", "tickSize", "perp_price", "spot_volume_24h", "perp_volume_24h", "exchange_spot", "exchange_perp", "symbol_perp"])
+                df.to_excel(xlsx_fn, index=False)
+            except:
+                except_tokens.append(token)
+                continue
+        print(f"Round {i_round}, {len(except_tokens)} except tokens: {except_tokens}.")
 
 if __name__ == "__main__":
     cal_save_long_short_spread()
