@@ -9,13 +9,17 @@ from func_common.basis_spread import cal_basis_spread
 from param import tokens_list, tokens_multiplier_dict, okx_token_list
 
 '''exp setting'''
-tokens = tokens_list + ["WIF", "TAO"] + ["STRK"]
-# tokens = okx_token_list
-end_time_str = '2024-06-05 0:00:00'     # UTC Time Zone
+exchange = "okx" #, 'bybit', "binance"
+if exchange == "bybit":
+    tokens = tokens_list + ["WIF", "TAO"] + ["STRK"]
+elif exchange == "okx":
+    tokens = okx_token_list
+else:
+    raise ValueError("exchange error.")
+end_time_str = '2024-06-05 6:00:00'     # UTC Time Zone
 time_winodw = 7
 start_time_str = datetime.strptime(end_time_str, "%Y-%m-%d %H:%M:%S") - timedelta(days = time_winodw)
 start_time_str = start_time_str.strftime("%Y-%m-%d %H:%M:%S")
-exchange = "bybit" #, 'bybit', "binance"
 exchanges = [exchange]
 timeframe = '1h'
 limit = 1000
