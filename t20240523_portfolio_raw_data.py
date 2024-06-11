@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
@@ -7,6 +8,7 @@ from data_common.crawl_common import get_ohlcv_df
 from data_common.crawl_okx_requests import get_okx_instruments
 from func_common.basis_spread import cal_basis_spread
 from param import tokens_list, tokens_multiplier_dict, okx_token_list
+from tools.dir_util import project_dir, create_directory
 
 '''exp setting'''
 exchange = "okx" #, 'bybit', "binance"
@@ -16,7 +18,7 @@ elif exchange == "okx":
     tokens = okx_token_list
 else:
     raise ValueError("exchange error.")
-end_time_str = '2024-06-05 6:00:00'     # UTC Time Zone
+end_time_str = '2024-06-11 0:00:00'     # UTC Time Zone
 time_winodw = 7
 start_time_str = datetime.strptime(end_time_str, "%Y-%m-%d %H:%M:%S") - timedelta(days = time_winodw)
 start_time_str = start_time_str.strftime("%Y-%m-%d %H:%M:%S")
@@ -104,7 +106,8 @@ def cal_save_long_short_spread():
     else:
         raise ValueError("exchange can only be okx and bybit.")
 
-    xlsx_fn = f"Raw_[{exchange}]_{start_time_str[:10]}_{end_time_str[:10]}.xlsx"
+    xlsx_fn = os.path.join( project_dir(), "data", f"{exchange}-raw", f"Raw_[{exchange}]_{start_time_str[:10]}_{end_time_str[:10]}.xlsx" )
+    create_directory(xlsx_fn)
     except_tokens = []
     for i_round in range(3):
         cur_tokens = tokens if i_round == 0 else except_tokens
