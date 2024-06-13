@@ -118,6 +118,8 @@ def get_bybit_funding_rate(symbol, category, start_time=None, end_time=None):
     return df
 
 if __name__ == '__main__':
+    df_ins = get_bybit_instruments()
+
     symbol = "1000PEPEUSDT"
     category = "linear"
     start_time = 1715385600000 # 1711900800000
