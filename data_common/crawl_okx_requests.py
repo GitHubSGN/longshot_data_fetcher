@@ -14,8 +14,8 @@ def get_okx_instruments() -> pd.DataFrame:
         data = response.json()
 
         data_list = data['data']
-        df = pd.DataFrame(data_list, columns=["uly", "state", "ctValCcy"])
-        df.rename(columns = {"uly":'symbol', "state":'status', "ctValCcy":'baseCoin'}, inplace=True)
+        df = pd.DataFrame(data_list, columns=["uly", "state", "settleCcy"])
+        df.rename(columns = {"uly":'symbol', "state":'status', "settleCcy":'baseCoin'}, inplace=True)
 
         df['tickSize'] = [item['tickSz'] for item in data_list]
 
