@@ -131,6 +131,10 @@ def cal_save_long_short_spread():
                     cal_raw_data(token,instruments_info)
                 if ms is None:
                     continue
+                if ms == 0 and ls == 0 and ss == 0 and ms1d == 0 and mes1d == 0 and mes7d == 0:
+                    # no spot in binance
+                    print(f"Might no spot of {token} at {exchange}.")
+                    continue
                 # res.append([token, ls, ms, ms1d, ss, volatility, tickSize, perp_price, volume_spot, volume_perp, exchange_spot, exchange_perp, symbol_perp])
                 # df = pd.DataFrame(res, columns=["token", "Bs", "MeanBs", "MeanBs1d", "StdBs", "vol(p.a.)", "tickSize", "perp_price", "spot_volume_24h", "perp_volume_24h", "exchange_spot", "exchange_perp", "symbol_perp"])
                 res.append([token, ls, ms, ms1d, mes7d, mes1d, ss, volatility, tickSize, perp_price, volume_spot, volume_perp, exchange_spot, exchange_perp, symbol_perp])
