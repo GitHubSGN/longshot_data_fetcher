@@ -3,22 +3,25 @@ import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
 
+from data_common.crawl_binance_requests import get_binance_instruments
 from data_common.crawl_bybit_requests import get_bybit_instruments
 from data_common.crawl_common import get_ohlcv_df
 from data_common.crawl_okx_requests import get_okx_instruments
 from func_common.basis_spread import cal_basis_spread
-from param import tokens_list, tokens_multiplier_dict, okx_token_list
+from param import tokens_list, tokens_multiplier_dict, okx_token_list, binance_token_list
 from tools.dir_util import project_dir, create_directory
 
 '''exp setting'''
-exchange = "okx" #, 'bybit', "binance"
+exchange = "binance" #, 'bybit', "binance"
 if exchange == "bybit":
     tokens = tokens_list + ["WIF", "TAO"] + ["STRK"]
 elif exchange == "okx":
     tokens = okx_token_list
+elif exchange == "binance":
+    tokens = binance_token_list
 else:
     raise ValueError("exchange error.")
-end_time_str = '2024-06-11 0:00:00'     # UTC Time Zone
+end_time_str = '2024-06-13 0:00:00'     # UTC Time Zone
 time_winodw = 7
 start_time_str = datetime.strptime(end_time_str, "%Y-%m-%d %H:%M:%S") - timedelta(days = time_winodw)
 start_time_str = start_time_str.strftime("%Y-%m-%d %H:%M:%S")
@@ -68,7 +71,13 @@ def cal_raw_data(token: str, instruments_info: pd.DataFrame = None):
     for (exchange, symbol) in [(exchange, symbol) for exchange in exchanges for symbol in symbol_proposal]:
         try:
             df_perp = get_ohlcv_df(symbol, start_time_str, end_time_str, exchange, timeframe, limit)
-            isymbol = symbol.split(":")[0].replace(f"/", "") if exchange == "bybit" else symbol.split(":")[0].replace(f"/", "-")
+            if exchange == "bybit" or exchange == "binance":
+                isymbol = symbol.split(":")[0].replace(f"/", "")
+            elif exchange == "okx":
+                isymbol = symbol.split(":")[0].replace(f"/", "-")
+            else:
+                raise ValueError(f"exhange must be in bybit, okx, binance.")
+
             tickSize = instruments_info.loc[instruments_info['symbol'] == isymbol, "tickSize"].values[0]
             exchange_perp = exchange
             symbol_perp = symbol
@@ -103,6 +112,8 @@ def cal_save_long_short_spread():
         instruments_info = get_okx_instruments()
     elif exchange == "bybit":
         instruments_info = get_bybit_instruments()
+    elif exchange == "binance":
+        instruments_info = get_binance_instruments()
     else:
         raise ValueError("exchange can only be okx and bybit.")
 
