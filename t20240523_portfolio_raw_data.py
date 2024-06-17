@@ -8,20 +8,22 @@ from data_common.crawl_bybit_requests import get_bybit_instruments
 from data_common.crawl_common import get_ohlcv_df
 from data_common.crawl_okx_requests import get_okx_instruments
 from func_common.basis_spread import cal_basis_spread
-from param import tokens_list, tokens_multiplier_dict, okx_token_list, binance_token_list
+from param import tokens_list, tokens_multiplier_dict, okx_token_list, binance_token_list, bybit_token_list
 from tools.dir_util import project_dir, create_directory
 
 '''exp setting'''
 exchange = "binance" #, 'bybit', "binance"
 if exchange == "bybit":
-    tokens = tokens_list + ["WIF", "TAO"] + ["STRK"]
+    # tokens = tokens_list + ["WIF", "TAO"] + ["STRK"] + ['OMNI', 'MEW', 'SAFE', 'BB', 'UMA', 'MOVR', 'VANRY', 'WIF', 'LEVER']
+    tokens = bybit_token_list + ["WIF", "TAO"] + ["STRK"] + ['OMNI', 'MEW', 'SAFE', 'BB', 'UMA', 'MOVR', 'VANRY', 'WIF', 'LEVER']
 elif exchange == "okx":
     tokens = okx_token_list
 elif exchange == "binance":
-    tokens = binance_token_list
+    tokens = binance_token_list + ["HBAR"]
 else:
     raise ValueError("exchange error.")
-end_time_str = '2024-06-13 0:00:00'     # UTC Time Zone
+tokens = sorted(list(set(tokens)))
+end_time_str = '2024-06-17 0:00:00'     # UTC Time Zone
 time_winodw = 7
 start_time_str = datetime.strptime(end_time_str, "%Y-%m-%d %H:%M:%S") - timedelta(days = time_winodw)
 start_time_str = start_time_str.strftime("%Y-%m-%d %H:%M:%S")
