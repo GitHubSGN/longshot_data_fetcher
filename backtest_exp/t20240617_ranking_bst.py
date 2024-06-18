@@ -1,64 +1,56 @@
-import copy
 import os
+import warnings
 from datetime import datetime
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
 from tools.dir_util import project_dir
 
+warnings.filterwarnings('ignore', category=RuntimeWarning, message='All-NaN slice encountered')
+
 factor_horizon = 7
 prediction_horizon = 21
 
-
 def top_percent_columns(row, percent_unit, top_rank):
-    lower_threshold = np.percentile(row, 100 - percent_unit * top_rank)
-    upper_threshold = np.percentile(row, 100 - percent_unit * top_rank + percent_unit)
-
+    lower_threshold = np.nanpercentile(row, 100 - percent_unit * top_rank)
+    upper_threshold = np.nanpercentile(row, 100 - percent_unit * top_rank + percent_unit)
     # print(lower_threshold, upper_threshold)
-
-    idx = (row > lower_threshold) & (row <= upper_threshold)
-    return idx
+    idx = (row >= lower_threshold) & (row <= upper_threshold)
+    return idx / sum(idx)
 
 def ranking_bst():
     xlsx_fn = os.path.join(project_dir(), "data", "a_funding", "FundingRate-90tokens_2023-01-01_2024-06-17.xlsx")
     df = pd.read_excel(xlsx_fn, index_col=0)
-    df.fillna(0, inplace=True)
+    # df.fillna(0, inplace=True)
+    df.index = pd.DatetimeIndex(df.index)
+    df_factor = df.rolling(window=factor_horizon * 3).mean()
 
-    df_factor = copy.deepcopy(df)
-    df_pred = copy.deepcopy(df)
-    for col in df.columns:
-        df_factor[col] = df[col].rolling(window=factor_horizon * 3).sum()
-        df_pred[col] = df[col].rolling(window=prediction_horizon * 3).sum().shift( -(prediction_horizon * 3 - 1) )
-
-    df_factor = df_factor.iloc[factor_horizon * 3 - 1:-(prediction_horizon * 3 - 1), :]
-    df_pred = df_pred.iloc[factor_horizon * 3 - 1:-(prediction_horizon * 3 - 1), :]
-
-    res_df = None
+    pnl_df = None
     for tr in range(1,11):
-        idx = df_factor.apply(lambda x: top_percent_columns(x, 10, tr), axis=1)
-        symbols_sum = idx.sum(axis=1)
-        weight_seq = 1.0 / symbols_sum
-        weight_seq[symbols_sum==0] = 0
-        weight_expanded = pd.DataFrame(np.zeros(df_factor.shape), index=df_factor.index, columns=df_factor.columns)
-        for i in range(len(weight_seq)):
-            weight_expanded.iloc[i, :] = weight_seq[i]
-        weights = pd.DataFrame(np.zeros_like(df_factor), index=df_factor.index, columns=df_factor.columns)
-        weights[idx] = weight_expanded[idx]
+        print(f"top{tr}:")
+        signal = df_factor.apply(lambda x: top_percent_columns(x, 10, tr), axis=1)
+        # (signal.shift(1) * df).sum(axis=1).cumsum().plot()
+        start_shift = 3
+        resampled_signal = signal.tail(-start_shift).resample(f'{prediction_horizon}d', offset=f'{prediction_horizon}d', label='right', closed='right', origin = 'start').last()
+        resampled_signal = resampled_signal.reindex(df.index).ffill()
 
-        pnl = (weights * df_pred).sum(axis=1)
+        turnover = np.abs(resampled_signal.diff()).sum(axis=1)
+        print( f"Avg. turnover per day: {sum(turnover) / ((resampled_signal.index[-1] - resampled_signal.index[0]) / pd.to_timedelta('1d'))}" )
+        print( f"Avg. return per trade: {(resampled_signal.shift(1) * df).sum(axis=1).sum() / sum(turnover)}" )
+
+        # (resampled_signal.shift(1) * df).sum(axis=1).cumsum().plot()
+        # plt.show()
+        pnl = (resampled_signal.shift(1) * df).sum(axis=1)
         pnl.name = f"top{tr}"
-        res_df = pnl.copy() if res_df is None else pd.concat([res_df, pnl], axis=1)
-        print(f"top{tr}: {pnl.sum() / prediction_horizon / 3}")
+        pnl_df = pnl.copy() if pnl_df is None else pd.concat([pnl_df, pnl], axis=1)
+        print(f"cum pnl: {pnl.sum()}")
 
-    res_df.to_excel("ranking_bst_pnl.xlsx", index=True)
-    res_df.index = [datetime.strptime(i, "%Y-%m-%d %H:%M:%S") for i in res_df.index]
-
-    cum_pnl_df = res_df.cumsum() / prediction_horizon / 3
+    pnl_df.to_excel("ranking_bst_pnl.xlsx", index=True)
+    pnl_df.index = df.index
+    cum_pnl_df = pnl_df.cumsum()
     cum_pnl_df.plot()
     plt.show()
-
 
     print("Done")
 
