@@ -140,3 +140,7 @@ cython_debug/
 
 .idea
 *.xlsx
+data/*.xlsx
+.DS_Store
+data/.DS_Store
+data/a_funding/.DS_Store
