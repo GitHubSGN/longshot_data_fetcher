@@ -48,7 +48,6 @@ def ranking_bst():
     df = pd.read_excel(xlsx_fn, index_col=0)
     # df.fillna(0, inplace=True)
     df.index = pd.DatetimeIndex(df.index)
-    df_factor = df.rolling(window=factor_horizon * 3).mean()
 
     df_spot = pd.read_csv(os.path.join(project_dir(), "data", "a_funding",'df_spot.csv'))
     df_perp = pd.read_csv(os.path.join(project_dir(), "data", "a_funding", 'df_perp.csv'))
@@ -74,6 +73,7 @@ def ranking_bst():
     pnl_spread = np.log(df_spot).diff() - np.log(df_perp).diff()
     df = pnl_spread + df
 
+    df_factor = df.rolling(window=factor_horizon * 3).mean()
     pnl_df = None
     for tr in range(1,11):
         print(f"top{tr}:")
