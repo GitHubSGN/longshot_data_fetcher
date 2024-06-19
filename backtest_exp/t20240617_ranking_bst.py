@@ -69,11 +69,12 @@ def ranking_bst():
     df_perp = df_perp.loc[:, ccc]
     df = df.loc[:, ccc]
 
+    df_factor = df.rolling(window=factor_horizon * 3).mean()
+
     ### long spot short perp
     pnl_spread = np.log(df_spot).diff() - np.log(df_perp).diff()
     df = pnl_spread + df
 
-    df_factor = df.rolling(window=factor_horizon * 3).mean()
     pnl_df = None
     for tr in range(1,11):
         print(f"top{tr}:")
