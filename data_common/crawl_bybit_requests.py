@@ -127,3 +127,5 @@ if __name__ == '__main__':
 
     df = get_bybit_open_interest(symbol, category, start_time, end_time)
     print(df)
+    df_fr = get_bybit_funding_rate(symbol, category, start_time, end_time)
+    print(df_fr)
