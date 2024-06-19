@@ -201,14 +201,15 @@ def get_raw_data(token: str, start_str: str = start_time_str, end_str: str = end
 
 
 def save_all_token_data():
-    tokens = bybit_token_list + ["WIF", "TAO"] + ["STRK"] + ['OMNI', 'MEW', 'SAFE', 'BB', 'UMA', 'MOVR', 'VANRY', 'WIF','LEVER']
-    tokens = set(tokens).intersection(set(cap_top150_tokens))
-    token_list = sorted(list(tokens))
-    for token in tokens_list:
+    # tokens = bybit_token_list + ["WIF", "TAO"] + ["STRK"] + ['OMNI', 'MEW', 'SAFE', 'BB', 'UMA', 'MOVR', 'VANRY', 'WIF','LEVER']
+    # tokens = set(tokens).intersection(set(cap_top150_tokens))
+    # token_list = sorted(list(tokens))
+    token_list = ['IO', 'VET', 'BTT', 'JASMY', 'CFX', 'NEO', 'GNO', 'BRETT', 'XMR', 'TAO', 'XEC', 'BEAM', 'LPT', 'CRO', 'APT', 'WIF', 'KAS', 'NOT', 'BSV', 'RON']
+    for token in token_list:
     # for token in ["BTC"]:
-        print(f"Now {token} Spot: {tokens_list.index(token) + 1} of {len(tokens_list)}")
+        print(f"Now {token} Spot: {token_list.index(token) + 1} of {len(token_list)}")
         df, exchanges_spot = get_spot_ohlcv(token, start_time_str, end_time_str)
-        print(f"Now {token} Perps: {tokens_list.index(token) + 1} of {len(tokens_list)}")
+        print(f"Now {token} Perps: {token_list.index(token) + 1} of {len(token_list)}")
         df, exchanges_perp, symbol_perp = get_perp_ohlcv(token, start_time_str, end_time_str)
         # print(f"Now {token} OI: {tokens_list.index(token) + 1} of {len(tokens_list)}")
         # df = get_funding_rate(token, start_time_str, end_time_str)
@@ -219,6 +220,6 @@ def save_all_token_data():
 
 if __name__ == "__main__":
     save_all_token_data()
-    df = get_ticksize()
+    # df = get_ticksize()
     # df = get_raw_data("BTC")
     # print("Success.")
