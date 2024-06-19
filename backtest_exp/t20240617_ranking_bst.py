@@ -38,12 +38,14 @@ def deal_data():
     df_perp.to_csv(os.path.join(project_dir(), "data", "a_funding",'df_perp.csv'))
     df_spot.to_csv(os.path.join(project_dir(), "data", "a_funding",'df_spot.csv'))
 
-def ranking_strategy_bst(funding_df, return_df, start_shift = 1, factor_horizon=7, prediction_horizon=21, percent_unit=10, show=True):
+def ranking_strategy_bst(funding_df, return_df, start_shift = 1, factor_horizon=7, prediction_horizon=21, percent_unit=10, show=True, print_log=True):
     df_factor = funding_df.rolling(window=factor_horizon * 3).mean()
 
     pnl_df = None
-    for tr in range(1, int(100/percent_unit)+1):
-        print(f"top{tr}:")
+    turnover_list = []
+    for tr in range(1, 2): #int(100/percent_unit)+1):
+        if print_log:
+            print(f"top{tr}:")
         signal = df_factor.apply(lambda x: top_percent_columns(x, percent_unit, tr), axis=1)
         # (signal.shift(1) * df).sum(axis=1).cumsum().plot()
         resampled_signal = signal.tail(-start_shift).resample(f'{prediction_horizon}d', offset=f'{prediction_horizon}d',
@@ -51,23 +53,26 @@ def ranking_strategy_bst(funding_df, return_df, start_shift = 1, factor_horizon=
         resampled_signal = resampled_signal.reindex(return_df.index).ffill()
 
         turnover = np.abs(resampled_signal.diff()).sum(axis=1)
-        print(f"Avg. turnover per day: {sum(turnover) / ((resampled_signal.index[-1] - resampled_signal.index[0]) / pd.to_timedelta('1d'))}")
-        print(f"Avg. return per trade: {(resampled_signal.shift(1) * return_df).sum(axis=1).sum() / sum(turnover)}")
+        turnover_list.append(turnover.sum())
+        if print_log:
+            print(f"Avg. turnover per day: {sum(turnover) / ((resampled_signal.index[-1] - resampled_signal.index[0]) / pd.to_timedelta('1d'))}")
+            print(f"Avg. return per trade: {(resampled_signal.shift(1) * return_df).sum(axis=1).sum() / sum(turnover)}")
 
         # (resampled_signal.shift(1) * df).sum(axis=1).cumsum().plot()
         # plt.show()
         pnl = (resampled_signal.shift(1) * return_df).sum(axis=1)
         pnl.name = f"top{tr}"
         pnl_df = pnl.copy() if pnl_df is None else pd.concat([pnl_df, pnl], axis=1)
-        print(f"cum pnl: {pnl.sum()}")
+        if print_log:
+            print(f"cum pnl: {pnl.sum()}")
 
-    pnl_df.to_excel(f"ranking_bst_pnl-{start_shift}-{factor_horizon}-{prediction_horizon}-{percent_unit}.xlsx", index=True)
+    # pnl_df.to_excel(f"ranking_bst_pnl-{start_shift}-{factor_horizon}-{prediction_horizon}-{percent_unit}.xlsx", index=True)
     pnl_df.index = return_df.index
     cum_pnl_df = pnl_df.cumsum()
     if show:
         cum_pnl_df.plot()
         plt.show()
-    return cum_pnl_df
+    return cum_pnl_df, turnover_list
 
 
 def ranking_bst(exchange = "bybit"):
@@ -101,7 +106,14 @@ def ranking_bst(exchange = "bybit"):
         pnl_spread = np.log(df_spot).diff() - np.log(df_perp).diff()
         return_df = pnl_spread + df
 
-        ranking_strategy_bst(df, return_df, start_shift=3, factor_horizon=7, prediction_horizon=21, percent_unit=10, show=True)
+        res = []
+        for fh in range(1, 31):
+            for ph in range(1, 31):
+                cum_pnl_df, turnover_list = ranking_strategy_bst(df, df, start_shift=3, factor_horizon=fh, prediction_horizon=ph, percent_unit=10, show=False, print_log=False)
+                res.append( [fh, ph, cum_pnl_df.iloc[-1], turnover_list[0]] )
+                print(fh, ph, cum_pnl_df.iloc[-1], turnover_list[0])
+                res_df = pd.DataFrame(res, columns=["factor_horizon", "prediction_horizon", "cum_pnl", "turnover"])
+                res_df.to_excel("tranverse.xlsx")
 
     print("Done")
 
