@@ -3,12 +3,13 @@ import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
 
+from data_common.common import cxxtSymbol_to_exchangeSymbol
 from data_common.crawl_binance_requests import get_binance_instruments
 from data_common.crawl_bybit_requests import get_bybit_instruments
 from data_common.crawl_common import get_ohlcv_df
 from data_common.crawl_okx_requests import get_okx_instruments
 from func_common.basis_spread import cal_basis_spread
-from param import tokens_list, tokens_multiplier_dict, okx_token_list, binance_token_list, bybit_token_list
+from param import tokens_multiplier_dict, okx_token_list, binance_token_list
 from tools.dir_util import project_dir, create_directory
 
 '''exp setting'''
@@ -73,12 +74,7 @@ def cal_raw_data(token: str, instruments_info: pd.DataFrame = None):
     for (exchange, symbol) in [(exchange, symbol) for exchange in exchanges for symbol in symbol_proposal]:
         try:
             df_perp = get_ohlcv_df(symbol, start_time_str, end_time_str, exchange, timeframe, limit)
-            if exchange == "bybit" or exchange == "binance":
-                isymbol = symbol.split(":")[0].replace(f"/", "")
-            elif exchange == "okx":
-                isymbol = symbol.split(":")[0].replace(f"/", "-")
-            else:
-                raise ValueError(f"exhange must be in bybit, okx, binance.")
+            isymbol = cxxtSymbol_to_exchangeSymbol(exchange, symbol)
 
             tickSize = instruments_info.loc[instruments_info['symbol'] == isymbol, "tickSize"].values[0]
             exchange_perp = exchange
