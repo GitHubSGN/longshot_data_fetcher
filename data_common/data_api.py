@@ -4,15 +4,15 @@ from datetime import datetime
 
 from data_common.crawl_bybit_requests import get_bybit_open_interest, get_bybit_funding_rate
 from data_common.crawl_common import get_ohlcv_df
-from param import tokens_list, tokens_multiplier_dict, data_dir
+from param import tokens_list, tokens_multiplier_dict, data_dir, bybit_token_list, cap_top150_tokens
 from tools.date_util import datetime_to_timestamp_tz0
 from tools.dir_util import create_directory
 
 '''exp setting'''
-end_time_str = '2024-05-16'
-start_time_str = '2024-01-01'
+end_time_str = '2024-06-19'
+start_time_str = '2023-01-01'
 # start_time_str = '2024-05-13'
-exchanges_prop = ['bybit', "binance", "okx"]
+exchanges_prop = ['bybit']
 timeframe = '1h'
 limit = 1000
 
@@ -35,13 +35,13 @@ def get_spot_ohlcv(token: str, start_str: str = start_time_str, end_str: str = e
     exchange_spot = None
     for exchange in exchanges:
         try:
-            xlsx_fn = os.path.join(data_dir, f"{start_time_str}-{end_time_str}", f"{token}_spot_{exchange}_{start_time_str}_{start_time_str}.xlsx")
+            xlsx_fn = os.path.join(data_dir, f"{start_str}-{end_str}", f"{token}_spot_{exchange}_{start_time_str}_{start_time_str}.xlsx")
             create_directory(xlsx_fn)
 
             if os.path.exists(xlsx_fn):
                 df_spot = pd.read_excel(xlsx_fn, index_col=False)
             else:
-                df_spot = get_ohlcv_df(symbol, start_time_str, end_time_str, exchange, timeframe, limit)
+                df_spot = get_ohlcv_df(symbol, start_str, end_str, exchange, timeframe, limit)
                 df_spot["ts"] = df_spot["open_time"].apply(lambda x: datetime_to_timestamp_tz0(datetime.strptime(x, "%Y-%m-%d %H:%M:%S")))
                 df_spot.to_excel(xlsx_fn, index=False)
             exchange_spot = exchange
@@ -69,13 +69,13 @@ def get_perp_ohlcv(token: str, start_str: str = start_time_str, end_str: str = e
     symbol_proposal = perp_symbol_proposal(token)
     for (exchange, symbol) in [(exchange, symbol) for exchange in exchanges for symbol in symbol_proposal]:
         try:
-            xlsx_fn = os.path.join(data_dir, f"{start_time_str}-{end_time_str}", f"{token}_perp_{exchange}_{start_time_str}_{start_time_str}.xlsx")
+            xlsx_fn = os.path.join(data_dir, f"{start_str}-{end_str}", f"{token}_perp_{exchange}_{start_str}_{start_str}.xlsx")
             create_directory(xlsx_fn)
 
             if os.path.exists(xlsx_fn):
                 df_perp = pd.read_excel(xlsx_fn, index_col=False)
             else:
-                df_perp = get_ohlcv_df(symbol, start_time_str, end_time_str, exchange, timeframe, limit)
+                df_perp = get_ohlcv_df(symbol, start_str, end_str, exchange, timeframe, limit)
                 df_perp["ts"] = df_perp["open_time"].apply(lambda x: datetime_to_timestamp_tz0(datetime.strptime(x, "%Y-%m-%d %H:%M:%S")))
                 df_perp.to_excel(xlsx_fn, index=False)
             exchange_perp = exchange
@@ -99,15 +99,15 @@ def get_open_interest(token: str, start_str: str = start_time_str, end_str: str 
     if exchange != 'bybit':
         raise ValueError("Sorry. Only Bybit is allowed to get openinterest.")
 
-    start_time_ts = datetime_to_timestamp_tz0(datetime.strptime(start_time_str, "%Y-%m-%d"))
-    end_time_ts = datetime_to_timestamp_tz0(datetime.strptime(end_time_str, "%Y-%m-%d"))
+    start_time_ts = datetime_to_timestamp_tz0(datetime.strptime(start_str, "%Y-%m-%d"))
+    end_time_ts = datetime_to_timestamp_tz0(datetime.strptime(end_str, "%Y-%m-%d"))
 
     df = None
     exchanges = [exchange] if exchange is not None else exchanges_prop
     symbol_proposal = perp_symbol_proposal(token)
     for (exchange, symbol) in [(exchange, symbol) for exchange in exchanges for symbol in symbol_proposal]:
         try:
-            xlsx_fn = os.path.join(data_dir, f"{start_time_str}-{end_time_str}", f"{token}_perp_{exchange}_oi_{start_time_str}_{start_time_str}.xlsx")
+            xlsx_fn = os.path.join(data_dir, f"{start_str}-{end_str}", f"{token}_perp_{exchange}_oi_{start_time_str}_{start_time_str}.xlsx")
             create_directory(xlsx_fn)
 
             if os.path.exists(xlsx_fn):
@@ -118,7 +118,7 @@ def get_open_interest(token: str, start_str: str = start_time_str, end_str: str 
                 df.rename(columns={"timestamp":"open_time"}, inplace=True)
                 df["open_time"] = df["open_time"].apply(lambda x: str(x))
                 df["ts"] = df["open_time"].apply(lambda x: datetime_to_timestamp_tz0(datetime.strptime(x, "%Y-%m-%d %H:%M:%S")))
-                df_perp, _, _ = get_perp_ohlcv(token, start_time_str, end_time_str, exchange)
+                df_perp, _, _ = get_perp_ohlcv(token, start_str, end_str, exchange)
                 df = pd.merge( df_perp[["ts", "open"]], df, on="ts", how="inner" )
                 df["oi"] = df["oi"] * df["open"]
                 del df["open"]
@@ -143,15 +143,15 @@ def get_funding_rate(token: str, start_str: str = start_time_str, end_str: str =
     if exchange != 'bybit':
         raise ValueError("Sorry. Only Bybit is allowed to get funding rate.")
 
-    start_time_ts = datetime_to_timestamp_tz0(datetime.strptime(start_time_str, "%Y-%m-%d"))
-    end_time_ts = datetime_to_timestamp_tz0(datetime.strptime(end_time_str, "%Y-%m-%d"))
+    start_time_ts = datetime_to_timestamp_tz0(datetime.strptime(start_str, "%Y-%m-%d"))
+    end_time_ts = datetime_to_timestamp_tz0(datetime.strptime(end_str, "%Y-%m-%d"))
 
     df = None
     exchanges = [exchange] if exchange is not None else exchanges_prop
     symbol_proposal = perp_symbol_proposal(token)
     for (exchange, symbol) in [(exchange, symbol) for exchange in exchanges for symbol in symbol_proposal]:
         try:
-            xlsx_fn = os.path.join(data_dir, f"{start_time_str}-{end_time_str}", f"{token}_perp_{exchange}_fr_{start_time_str}_{start_time_str}.xlsx")
+            xlsx_fn = os.path.join(data_dir, f"{start_str}-{end_str}", f"{token}_perp_{exchange}_fr_{start_time_str}_{start_time_str}.xlsx")
             create_directory(xlsx_fn)
 
             if os.path.exists(xlsx_fn):
@@ -201,21 +201,24 @@ def get_raw_data(token: str, start_str: str = start_time_str, end_str: str = end
 
 
 def save_all_token_data():
+    tokens = bybit_token_list + ["WIF", "TAO"] + ["STRK"] + ['OMNI', 'MEW', 'SAFE', 'BB', 'UMA', 'MOVR', 'VANRY', 'WIF','LEVER']
+    tokens = set(tokens).intersection(set(cap_top150_tokens))
+    token_list = sorted(list(tokens))
     for token in tokens_list:
     # for token in ["BTC"]:
-        # print(f"Now {token} Spot: {tokens_list.index(token) + 1} of {len(tokens_list)}")
-        # df, exchanges_spot = get_spot_ohlcv(token, start_time_str, end_time_str)
-        # print(f"Now {token} Perps: {tokens_list.index(token) + 1} of {len(tokens_list)}")
-        # df, exchanges_perp, symbol_perp = get_perp_ohlcv(token, start_time_str, end_time_str)
+        print(f"Now {token} Spot: {tokens_list.index(token) + 1} of {len(tokens_list)}")
+        df, exchanges_spot = get_spot_ohlcv(token, start_time_str, end_time_str)
+        print(f"Now {token} Perps: {tokens_list.index(token) + 1} of {len(tokens_list)}")
+        df, exchanges_perp, symbol_perp = get_perp_ohlcv(token, start_time_str, end_time_str)
         # print(f"Now {token} OI: {tokens_list.index(token) + 1} of {len(tokens_list)}")
         # df = get_funding_rate(token, start_time_str, end_time_str)
 
-        print(f"Now {token} OI: {tokens_list.index(token) + 1} of {len(tokens_list)}")
+        # print(f"Now {token} OI: {tokens_list.index(token) + 1} of {len(tokens_list)}")
         # df = get_funding_rate(token, start_time_str, end_time_str)
 
 
 if __name__ == "__main__":
-    # save_all_token_data()
-    # df = get_ticksize()
-    df = get_raw_data("BTC")
-    print("Success.")
+    save_all_token_data()
+    df = get_ticksize()
+    # df = get_raw_data("BTC")
+    # print("Success.")
