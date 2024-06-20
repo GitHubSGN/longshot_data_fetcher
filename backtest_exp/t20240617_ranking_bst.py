@@ -40,14 +40,14 @@ def deal_data():
     df_perp.to_csv(os.path.join(project_dir(), "data", "a_funding",'df_perp.csv'))
     df_spot.to_csv(os.path.join(project_dir(), "data", "a_funding",'df_spot.csv'))
 
-def ranking_strategy_bst(funding_df, return_df, factor_horizon=7, prediction_horizon=21, percent_unit=10, show=True):
-    df_factor = funding_df.rolling(window=factor_horizon * 3).mean()
+def ranking_strategy_bst(funding_df, return_df, factor_horizon='7d', prediction_horizon='21d', percent_unit=10, show=True):
+    df_factor = funding_df.rolling(window=int((pd.to_timedelta(factor_horizon)) / (funding_df.index[-1] - funding_df.index[-2]))).mean()
 
     pnl_df = None
     signal_long = df_factor.apply(lambda x: top_percent_columns(x, percent_unit, 1), axis=1)
     signal_short = -df_factor.apply(lambda x: top_percent_columns(x, percent_unit, int(rank_const / percent_unit)), axis=1)
     signal = (signal_long + signal_short)/2.0
-    resampled_signal = signal.resample(f'{prediction_horizon}d', offset=f'{prediction_horizon}d', label='right', closed='right', origin='start').last()
+    resampled_signal = signal.resample(f'{pd.to_timedelta(prediction_horizon)/pd.to_timedelta("1h")}h', offset=f'{pd.to_timedelta(prediction_horizon)/pd.to_timedelta("1h")}h', label='right', closed='right', origin='start').last()
     resampled_signal = resampled_signal.reindex(return_df.index).ffill()
 
     turnover = np.abs(resampled_signal.diff()).sum(axis=1)
@@ -93,7 +93,7 @@ def ranking_bst(exchange = "bybit"):
         pnl_spread = np.log(df_spot).diff() - np.log(df_perp).diff()
         return_df = pnl_spread + df
 
-        ranking_strategy_bst(df, np.log(df_perp).diff(), factor_horizon=5, prediction_horizon=1, percent_unit=5, show=True)
+        ranking_strategy_bst(df, np.log(df_perp).diff(), factor_horizon='5d', prediction_horizon='1d', percent_unit=5, show=True)
 
     print("Done")
 
