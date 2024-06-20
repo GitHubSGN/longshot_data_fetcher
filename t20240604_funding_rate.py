@@ -53,9 +53,10 @@ def save_funding_rate():
                     df = get_bybit_funding_rate(isymbol, "linear", start_time=start_time_ts, end_time=end_time_ts)
                 elif exchange == "okx":
                     isymbol = isymbol + "-SWAP"
-                    df = get_okx_funding_rate(isymbol, None, start_time=start_time_ts, end_time=end_time_ts)
+                    df = get_okx_funding_rate(isymbol, None, start_time=start_time_ts, end_time=end_time_ts+1)
                 elif exchange == "binance":
                     df = get_binance_funding_rate(isymbol, None, start_time=start_time_ts, end_time=end_time_ts)
+                    df = df.iloc[::-1].reset_index(drop=True)
                 else:
                     raise ValueError("Exchange Error.")
 
@@ -83,9 +84,12 @@ def save_funding_rate():
             fr_list = new_fr_list
         res[token] = fr_list
         df = pd.DataFrame(res)
-        if idx is not None:
-            df.index = idx
-        xlsx_name = os.path.join(project_dir(), "data", "a_funding",
+        if idx is None:
+            idx = pd.date_range(start=f'{start_time_str} 00:00:00', end=f'{end_time_str} 00:00:00', freq='8H')
+            idx = idx.strftime('%Y-%m-%d %H:%M:%S')
+
+        df.index = idx
+        xlsx_name = os.path.join(project_dir(), "data", "a_funding", exchange,
                                  f"FundingRate-{exchange}-{len(tokens)}tokens_{start_time_str}_{end_time_str}.xlsx")
         df.to_excel(xlsx_name)
 
