@@ -14,7 +14,7 @@ rank_const = 100
 def top_percent_columns(row, percent_unit, top_rank):
     lower_threshold = np.nanpercentile(row, rank_const - percent_unit * top_rank)
     upper_threshold = np.nanpercentile(row, rank_const - percent_unit * top_rank + percent_unit)
-    # print(lower_threshold, upper_threshold)
+    # print(rank_const - percent_unit * top_rank, rank_const - percent_unit * top_rank + percent_unit)
     idx = (row >= lower_threshold) & (row <= upper_threshold)
     return idx / sum(idx)
 
