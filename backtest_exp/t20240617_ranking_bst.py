@@ -94,7 +94,7 @@ def ranking_bst(exchange = "bybit"):
         pnl_spread = np.log(df_spot).diff() - np.log(df_perp).diff()
         return_df = pnl_spread + df
 
-        ranking_strategy_bst(df, np.log(df_perp).diff()-df, factor_horizon='5d', prediction_horizon='16h', percent_unit=10)
+        ranking_strategy_bst(df, np.log(df_perp).diff()-df, factor_horizon='64h', prediction_horizon='16h', percent_unit=10)
 
     print("Done")
 
