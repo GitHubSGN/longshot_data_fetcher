@@ -35,8 +35,8 @@ def deal_data():
                 df_perp = pd.concat([df_perp, ttt], axis=1)
             if 'spot' in filename:
                 df_spot = pd.concat([df_spot, ttt], axis=1)
-    df_perp.to_csv(os.path.join(project_dir(), "data", "a_funding",'df_perp.csv'))
-    df_spot.to_csv(os.path.join(project_dir(), "data", "a_funding",'df_spot.csv'))
+    df_perp.to_csv(os.path.join(project_dir(), "data", "a_funding", "bybit", 'df_perp.csv'))
+    df_spot.to_csv(os.path.join(project_dir(), "data", "a_funding", "bybit", 'df_spot.csv'))
 
 def ranking_strategy_bst(funding_df, return_df, start_shift = 1, factor_horizon=7, prediction_horizon=21, percent_unit=10, show=True, print_log=True):
     df_factor = funding_df.rolling(window=factor_horizon * 3).mean()
@@ -77,13 +77,13 @@ def ranking_strategy_bst(funding_df, return_df, start_shift = 1, factor_horizon=
 
 def ranking_bst(exchange = "bybit"):
     if exchange == "bybit":
-        xlsx_fn = os.path.join(project_dir(), "data", "a_funding", "FundingRate-90tokens_2023-01-01_2024-06-17.xlsx")
+        xlsx_fn = os.path.join(project_dir(), "data", "a_funding", exchange, "FundingRate-90tokens_2023-01-01_2024-06-17.xlsx")
         df = pd.read_excel(xlsx_fn, index_col=0)
         # df.fillna(0, inplace=True)
         df.index = pd.DatetimeIndex(df.index)
 
-        df_spot = pd.read_csv(os.path.join(project_dir(), "data", "a_funding",'df_spot.csv'))
-        df_perp = pd.read_csv(os.path.join(project_dir(), "data", "a_funding", 'df_perp.csv'))
+        df_spot = pd.read_csv(os.path.join(project_dir(), "data", "a_funding", exchange, 'df_spot.csv'))
+        df_perp = pd.read_csv(os.path.join(project_dir(), "data", "a_funding", exchange, 'df_perp.csv'))
         df_spot.index = pd.DatetimeIndex(df_spot.iloc[:, 0])
         df_perp.index = pd.DatetimeIndex(df_perp.iloc[:, 0])
         df_spot.index.name = None
