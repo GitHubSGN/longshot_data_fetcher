@@ -46,7 +46,8 @@ def ranking_strategy_bst(funding_df, return_df, factor_horizon='7d', prediction_
     pnl_df = None
     signal_short = -df_factor.apply(lambda x: top_percent_columns(x, percent_unit, 1), axis=1)
     signal_long = df_factor.apply(lambda x: top_percent_columns(x, percent_unit, int(rank_const / percent_unit)), axis=1)
-    signal = ((signal_long + signal_short)/2.0) / return_df.rolling(10).std()
+    signal = ((signal_long + signal_short)/2.0) / (return_df.rolling(100).max() - return_df.rolling(100).min())
+    signal = signal.rolling(5).mean()
     resampled_signal = signal.resample(f'{pd.to_timedelta(prediction_horizon)/pd.to_timedelta("1h")}h', offset=f'{pd.to_timedelta(prediction_horizon)/pd.to_timedelta("1h")}h', label='right', closed='right', origin='start').last()
     resampled_signal = resampled_signal.reindex(return_df.index).ffill()
 
@@ -93,7 +94,7 @@ def ranking_bst(exchange = "bybit"):
         pnl_spread = np.log(df_spot).diff() - np.log(df_perp).diff()
         return_df = pnl_spread + df
 
-        ranking_strategy_bst(df, np.log(df_perp).diff()-df, factor_horizon='7d', prediction_horizon='1d', percent_unit=10)
+        ranking_strategy_bst(df, np.log(df_perp).diff()-df, factor_horizon='5d', prediction_horizon='16h', percent_unit=10)
 
     print("Done")
 
