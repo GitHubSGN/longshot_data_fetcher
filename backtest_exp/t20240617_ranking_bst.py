@@ -50,7 +50,7 @@ def cal_sharp_ratio(pnl):
     return ret_ap_avg, ret_ap_std, ret_sharp
 
 def ranking_strategy_bst(funding_df, return_df, start_shift = 1, factor_horizon=7, prediction_horizon=21, percent_unit=10,
-                         top_bunches = 100, show=False, print_log=False, save=False):
+                         top_bunches = 100, baseline=None, show=False, print_log=False, save=False):
     df_factor = funding_df.rolling(window=factor_horizon * 3).mean()
     # df_factor = funding_df.rolling(window=factor_horizon * 3).mean() - 1 * funding_df.rolling(window=factor_horizon * 3).std()
     # df_factor = funding_df.rolling(window=factor_horizon * 3).mean() * 3 * 365 - 1 * funding_df.rolling(window=factor_horizon * 3).std() * np.sqrt(3*365)
@@ -86,7 +86,9 @@ def ranking_strategy_bst(funding_df, return_df, start_shift = 1, factor_horizon=
             print(f"cum pnl: {pnl.sum()}, cum tc: {tc.sum()} => cum return: {pnl.sum() - tc.sum()}")
 
     # add baseline
-    for token in ["BTC", "ETH"]:
+    if baseline is None:
+        baseline = []
+    for token in baseline:
         pnl = return_df[token]
         pnl_df = pd.concat([pnl_df, pnl], axis=1)
         tc = pd.Series(0, index=pnl.index, name=pnl.name)
@@ -142,8 +144,8 @@ def ranking_bst(exchange = "bybit"):
 
         case_study = False
         if case_study:
-            pnl_df, tc_df, turnover_list = ranking_strategy_bst(df, df, start_shift=3, factor_horizon=7, prediction_horizon=21, percent_unit=10, top_bunches=10, show=True, print_log=True)
-            pnl_df, tc_df, turnover_list = ranking_strategy_bst(df, df, start_shift=3, factor_horizon=7, prediction_horizon=1, percent_unit=10, top_bunches=10, show=True, print_log=True)
+            pnl_df, tc_df, turnover_list = ranking_strategy_bst(df, df, start_shift=3, factor_horizon=7, prediction_horizon=21, percent_unit=10, top_bunches=10, baseline=["BTC", "ETH"], show=True, print_log=True)
+            # pnl_df, tc_df, turnover_list = ranking_strategy_bst(df, df, start_shift=3, factor_horizon=7, prediction_horizon=1, percent_unit=10, top_bunches=10, baseline=["BTC", "ETH"], show=True, print_log=True)
             ret_ap_avg, ret_ap_std, ret_sharp = cal_sharp_ratio(pnl_df)
             display_cols = [f"top{i}" for i in range(1,4)] + ["BTC", "ETH"]
             for col in display_cols:
@@ -158,10 +160,22 @@ def ranking_bst(exchange = "bybit"):
         xlsx_pos = datetime.now().strftime('%y%m%d-%H%M%S')
         for fh in range(1, 31):
             for ph in range(1, 31):
-                pnl_df, tc_df, turnover_list = ranking_strategy_bst(df, df, start_shift=3, factor_horizon=fh, prediction_horizon=ph, percent_unit=5, top_bunches=1, show=False, print_log=False)
-                res.append( [fh, ph, pnl_df.sum(), turnover_list[0]] )
-                print(fh, ph, pnl_df.sum(), turnover_list[0])
-                res_df = pd.DataFrame(res, columns=["factor_horizon", "prediction_horizon", "cum_pnl", "turnover"])
+                pnl_df, tc_df, turnover_list = ranking_strategy_bst(df, df, start_shift=3, factor_horizon=fh, prediction_horizon=ph, percent_unit=10, top_bunches=1, show=False, print_log=False)
+                print(fh, ph, pnl_df.sum().values[0], turnover_list[0])
+                # res.append([fh, ph, pnl_df.sum(), turnover_list[0]])
+                # res_df = pd.DataFrame(res, columns=["factor_horizon", "prediction_horizon", "cum_pnl", "turnover"])
+
+                cur_res = [fh, ph, turnover_list[0]]
+                cols = ["factor_horizon", "prediction_horizon", "turnover"]
+                for idx, tc_mul in enumerate( [0, (4.6*2+10)/1e4, (2*2+10)/1e4] ):
+                    cpnl_df = pnl_df - tc_df * tc_mul / (COMISSION + SLIPPAGE)
+                    ret_ap_avg, ret_ap_std, ret_sharp = cal_sharp_ratio(cpnl_df)
+                    ravg, rstd, rshp = ret_ap_avg["top1"], ret_ap_std["top1"], ret_sharp["top1"]
+                    cur_res.extend( [cpnl_df.sum().values[0], ravg, rstd, rshp] )
+                    cols.extend( [f"{idx}_{c}" for c in ["cumRet", "avgRet", "stdRet", "Sharp"]])
+
+                res.append(cur_res)
+                res_df = pd.DataFrame(res, columns=cols)
                 res_df.to_excel(f"tranverse_{xlsx_pos}.xlsx")
 
     print("Done")
