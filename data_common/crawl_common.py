@@ -72,13 +72,36 @@ def get_ohlcv_df(symbol,start_time_str,end_time_str,exchange,timeframe,limit):
     #                         ) + '----------------------start-------------------------\n')
     return df
 
+def get_funding_df(symbol,start_time_str,end_time_str,exchange):
+    # 调整时间格式
+    exchange = eval('ccxt.' + exchange + '()')
+    try:
+        start_time = dt.datetime.strptime(start_time_str, '%Y-%m-%d %H:%M:%S')
+    except:
+        start_time = dt.datetime.strptime(start_time_str, '%Y-%m-%d')
+    # start_time = int(start_time.timestamp() * 1000)
+    start_time = datetime_to_timestamp_tz0(start_time)
+    try:
+        end_time = dt.datetime.strptime(end_time_str, '%Y-%m-%d %H:%M:%S')
+    except:
+        end_time = dt.datetime.strptime(end_time_str, '%Y-%m-%d')
+    # end_time = int(end_time.timestamp() * 1000)
+    end_time = datetime_to_timestamp_tz0(end_time)
+
+    df = exchange.fetchFundingRateHistory (symbol = symbol, since = start_time, params = {"endTime":end_time} )
+    df = pd.DataFrame(df, columns=["symbol", "fundingRate", "timestamp", "datetime"])
+
+    return df
+
 if __name__ == "__main__":
-    start_time_str = '2024-04-30'
+    start_time_str = '2023-01-01'
     end_time_str = '2024-05-13'
-    exchange = 'bybit'
+    exchange = 'okx'
     # symbol = 'ORDI/USDT:USDT'
     symbol = "ORDI/USDT"
     timeframe = '1h'
     limit = 1000
-    df = get_ohlcv_df(symbol, start_time_str, end_time_str, exchange, timeframe, limit)
-    print(df)
+    # df = get_ohlcv_df(symbol, start_time_str, end_time_str, exchange, timeframe, limit)
+    fdf = get_funding_df("AVAX/USDT:USDT", start_time_str, end_time_str, exchange)
+
+    print("Done.")
