@@ -14,7 +14,7 @@ from tools.dir_util import project_dir
 
 '''exp setting'''
 # tokens = ["BTC", "ETH", "SOL", "AVAX", "PEPE", "LINK", "ARB", "NEAR", "BONK", "DOGE", "ORDI", "ENS", "FIL", "LDO"]
-exchange = "bybit"
+exchange = "binance"
 if exchange == "bybit":
     tokens = bybit_token_list + ["WIF", "TAO"] + ["STRK"] + ['OMNI', 'MEW', 'SAFE', 'BB', 'UMA', 'MOVR', 'VANRY', 'WIF', 'LEVER']
 elif exchange == "okx":
@@ -78,6 +78,8 @@ def save_funding_rate():
             except:
                 print(f"No {symbol} in {exchange}...")
                 continue
+        if fr_list is None:
+            continue
         if len(fr_list) != item_num:
             new_fr_list = [None for i in range(item_num)]
             new_fr_list[-len(fr_list):] = fr_list
@@ -89,9 +91,9 @@ def save_funding_rate():
             idx = idx.strftime('%Y-%m-%d %H:%M:%S')
 
         df.index = idx
-        xlsx_name = os.path.join(project_dir(), "data", "a_funding", exchange,
-                                 f"FundingRate-{exchange}-{len(tokens)}tokens_{start_time_str}_{end_time_str}.xlsx")
-        df.to_excel(xlsx_name)
+        csv_name = os.path.join(project_dir(), "data", "a_funding", exchange,
+                                 f"FundingRate-{exchange}-{len(tokens)}tokens_{start_time_str}_{end_time_str}.csv")
+        df.to_csv(csv_name)
 
 if __name__ == '__main__':
     save_funding_rate()
