@@ -21,27 +21,37 @@ def top_percent_columns(row, percent_unit, top_rank):
     idx = (row >= lower_threshold) & (row <= upper_threshold)
     return idx / sum(idx)
 
-def deal_data():
-    wd = os.path.join(project_dir(), "data", "a_funding", "2023-01-01-2024-06-19")
+def deal_data(exchange="bybit"):
+    wd = os.path.join(project_dir(), "data", "a_kline", exchange, "2023-01-01-2024-06-19")
     df_perp = None
     df_spot = None
     for dirpath, dirnames, filenames in os.walk(wd):
         print(f'Found directory: {dirpath}')
         for filename in filenames:
             print(filename)
+            if not filename.endswith(".csv"):
+                continue
+            # if filename == "XMR_spot_binance_2023-01-01_2024-06-19.csv":
+            #     print("Debug")
             temp_file = os.path.join(wd, filename)
-            df = pd.read_excel(temp_file, index_col=0)
+            # df = pd.read_excel(temp_file, index_col=0)
+            df = pd.read_csv(temp_file, index_col=0)
             df.index = pd.DatetimeIndex(df.index)
             df.index.name = None
             df.index = df.index - pd.to_timedelta('8h') ### adjust for UTC
+            # check duplicate
+            duplicates = df.index.duplicated()
+            if sum(duplicates)!=0:
+                print(f"Remove Duplicated Index for {filename}: {df.index[duplicates]}")
+                df = df[~df.index.duplicated(keep='first')]
             ttt = df.open ### use open data because the time index is open time
             ttt.name = filename.split('_')[0]
             if 'perp' in filename:
                 df_perp = pd.concat([df_perp, ttt], axis=1)
             if 'spot' in filename:
                 df_spot = pd.concat([df_spot, ttt], axis=1)
-    df_perp.to_csv(os.path.join(project_dir(), "data", "a_funding", "bybit", 'df_perp.csv'))
-    df_spot.to_csv(os.path.join(project_dir(), "data", "a_funding", "bybit", 'df_spot.csv'))
+    df_perp.to_csv(os.path.join(project_dir(), "data", "a_funding", exchange, 'df_perp.csv'))
+    df_spot.to_csv(os.path.join(project_dir(), "data", "a_funding", exchange, 'df_spot.csv'))
 
 def cal_sharp_ratio(pnl):
     ret_ap_avg = pnl.mean() * (pd.to_timedelta('365d') / (pnl.index[-1] - pnl.index[-2]))
@@ -182,5 +192,5 @@ def ranking_bst(exchange = "bybit"):
 
 
 if __name__ == '__main__':
-    ### deal_data()
-    ranking_bst()
+    deal_data(exchange="binance")
+    # ranking_bst()
