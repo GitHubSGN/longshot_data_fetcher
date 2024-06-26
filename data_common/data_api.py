@@ -2,9 +2,13 @@ import os
 import pandas as pd
 from datetime import datetime
 
+from data_common.common import cxxtSymbol_to_exchangeSymbol
+from data_common.crawl_binance_requests import get_binance_funding_rate
 from data_common.crawl_bybit_requests import get_bybit_open_interest, get_bybit_funding_rate
 from data_common.crawl_common import get_ohlcv_df
-from param import tokens_list, tokens_multiplier_dict, data_dir, bybit_token_list, cap_top150_tokens
+from data_common.crawl_okx_requests import get_okx_funding_rate
+from param import tokens_list, tokens_multiplier_dict, data_dir, bybit_token_list, cap_top150_tokens, okx_token_list, \
+    binance_token_list
 from tools.date_util import datetime_to_timestamp_tz0
 from tools.dir_util import create_directory
 
@@ -12,7 +16,7 @@ from tools.dir_util import create_directory
 end_time_str = '2024-06-19'
 start_time_str = '2023-01-01'
 # start_time_str = '2024-05-13'
-exchanges_prop = ['bybit']
+exchanges_prop = ['bybit', 'okx', 'binance']
 timeframe = '1h'
 limit = 1000
 
@@ -35,15 +39,15 @@ def get_spot_ohlcv(token: str, start_str: str = start_time_str, end_str: str = e
     exchange_spot = None
     for exchange in exchanges:
         try:
-            xlsx_fn = os.path.join(data_dir, f"{start_str}-{end_str}", f"{token}_spot_{exchange}_{start_time_str}_{start_time_str}.xlsx")
-            create_directory(xlsx_fn)
+            csv_fn = os.path.join(data_dir, "a_kline", "-".join(exchanges), f"{start_str}-{end_str}", f"{token}_spot_{exchange}_{start_time_str}_{end_time_str}.csv")
+            create_directory(csv_fn)
 
-            if os.path.exists(xlsx_fn):
-                df_spot = pd.read_excel(xlsx_fn, index_col=False)
+            if os.path.exists(csv_fn):
+                df_spot = pd.read_csv(csv_fn, index_col=False)
             else:
                 df_spot = get_ohlcv_df(symbol, start_str, end_str, exchange, timeframe, limit)
                 df_spot["ts"] = df_spot["open_time"].apply(lambda x: datetime_to_timestamp_tz0(datetime.strptime(x, "%Y-%m-%d %H:%M:%S")))
-                df_spot.to_excel(xlsx_fn, index=False)
+                df_spot.to_csv(csv_fn, index=False)
             exchange_spot = exchange
             if len(df_spot)==0:
                 df_spot = None
@@ -69,15 +73,15 @@ def get_perp_ohlcv(token: str, start_str: str = start_time_str, end_str: str = e
     symbol_proposal = perp_symbol_proposal(token)
     for (exchange, symbol) in [(exchange, symbol) for exchange in exchanges for symbol in symbol_proposal]:
         try:
-            xlsx_fn = os.path.join(data_dir, f"{start_str}-{end_str}", f"{token}_perp_{exchange}_{start_str}_{start_str}.xlsx")
-            create_directory(xlsx_fn)
+            csv_fn = os.path.join(data_dir, "a_kline", "-".join(exchanges), f"{start_str}-{end_str}", f"{token}_perp_{exchange}_{start_str}_{end_str}.csv")
+            create_directory(csv_fn)
 
-            if os.path.exists(xlsx_fn):
-                df_perp = pd.read_excel(xlsx_fn, index_col=False)
+            if os.path.exists(csv_fn):
+                df_perp = pd.read_csv(csv_fn, index_col=False)
             else:
                 df_perp = get_ohlcv_df(symbol, start_str, end_str, exchange, timeframe, limit)
                 df_perp["ts"] = df_perp["open_time"].apply(lambda x: datetime_to_timestamp_tz0(datetime.strptime(x, "%Y-%m-%d %H:%M:%S")))
-                df_perp.to_excel(xlsx_fn, index=False)
+                df_perp.to_csv(csv_fn, index=False)
             exchange_perp = exchange
             symbol_perp = symbol
             if len(df_perp)==0:
@@ -95,6 +99,7 @@ def get_perp_ohlcv(token: str, start_str: str = start_time_str, end_str: str = e
         df_perp.reset_index(drop=True, inplace=True)
     return df_perp, exchange_perp, symbol_perp
 
+'''might be less used: get_open_interest, get_funding_rate, get_tick_size'''
 def get_open_interest(token: str, start_str: str = start_time_str, end_str: str = end_time_str, exchange: str = 'bybit'):
     if exchange != 'bybit':
         raise ValueError("Sorry. Only Bybit is allowed to get openinterest.")
