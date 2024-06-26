@@ -5,7 +5,7 @@ from statsmodels.tools import add_constant
 from research.supporting_func.dataresampler import DataResampler
 from research.supporting_func.supportingfunctions import signalround, XSnormalization, fundlevelnormalization, \
     risk_manage_portfolio, risk_manage_asset
-from research.supporting_func.sist_dict import *
+from research.supporting_func.singlefactor_dict import *
 from typing import Dict
 
 

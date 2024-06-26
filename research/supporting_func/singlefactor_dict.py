@@ -200,11 +200,11 @@ def calc_fi(dict_df, lookbackperiod):
     return series_rank(vbo(dict_df, lookbackperiod), lookbackperiod)
 
 
-class sist_dict(bs):
+class singlefactor_dict(bs):
     def __init__(self, logreturn, high, low, close, open, volume, anualized_factor, name, smooth_factor,
                  temp_expression, normalize_lookbackperiod=120, std_cap=0.1, voltarget=0.15, portfolio_limit=1,
                  asset_limit=0.3):
-        super(sist_dict, self).__init__(name=name, anualized_factor=anualized_factor)
+        super(singlefactor_dict, self).__init__(name=name, anualized_factor=anualized_factor)
         self.logreturn = logreturn
         self.high = high
         self.low = low
@@ -361,10 +361,10 @@ if __name__ == '__main__':
     # srsi: mom on mom
     # fi: rank on mom
     # aroon: mom in terms of index
-    trendsignal = sist_dict(name='c4', logreturn=assetreturn, high=assethigh, low=assetlow,
-                            close=assetclose, open=assetopen, volume=assetvolume,
-                            temp_expression=temp_expression, normalize_lookbackperiod=normalize_lookbackperiod,
-                            anualized_factor=anualized_factor, smooth_factor=smooth_factor)
+    trendsignal = singlefactor_dict(name='c4', logreturn=assetreturn, high=assethigh, low=assetlow,
+                                    close=assetclose, open=assetopen, volume=assetvolume,
+                                    temp_expression=temp_expression, normalize_lookbackperiod=normalize_lookbackperiod,
+                                    anualized_factor=anualized_factor, smooth_factor=smooth_factor)
     trendsignal.set_lookbackperiod(templookbackperiod)
     trendsignal.predict()
     endofpredict = time.time()
