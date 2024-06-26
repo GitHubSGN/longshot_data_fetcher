@@ -148,4 +148,4 @@ data/a_funding/.DS_Store
 
 research/data/saveddata
 research/data/*.zip
-research/*.csv
+research/supporting_func/*.csv
